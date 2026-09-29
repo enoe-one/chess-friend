@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <title>Échecs entre amis</title>
 <script src="chess.min.js"></script>
 <link rel="stylesheet" href="style.css"></head>
 <body><main>
-<h1><span>♞ Échecs entre amis</span><button class="sec" id="out" hidden>Déconnexion</button></h1>
+<h1><span class="brand"><span class="knight">♞</span>Échecs entre amis</span>
+  <span class="row" style="margin:0"><button class="avatar" id="avbtn" hidden></button><button class="sec" id="out" hidden>Déconnexion</button></span>
+</h1>
 <p id="msg"></p>
 
 <section id="auth" hidden>
@@ -15,6 +20,7 @@
     <div class="row"><input id="pass" type="password" placeholder="Mot de passe (6+ caractères)"></div>
     <div class="row"><button id="login">Se connecter</button><button class="sec" id="signup">Créer un compte</button></div>
     <div class="row"><button class="sec" id="google">Continuer avec Google</button></div>
+    <div class="row"><button class="sec" id="forgot" style="background:none;border:0;padding:0;color:var(--mut);text-decoration:underline">Mot de passe oublié ?</button></div>
   </div>
 </section>
 
@@ -44,6 +50,29 @@
   <div class="card"><h2>Mes parties en cours</h2><div class="list" id="mine"></div></div>
 </section>
 
+<section id="profile" hidden>
+  <div class="card">
+    <div class="row" style="align-items:center;gap:14px">
+      <button class="avatar big" id="pf-av"></button>
+      <div><div id="pf-name" style="font-family:var(--serif);font-size:1.2rem;font-weight:600"></div>
+        <div class="small">Code ami : <b id="pf-code"></b> · membre depuis <span id="pf-since"></span></div></div>
+    </div>
+    <div class="stats" id="pf-stats"></div>
+  </div>
+  <div class="card"><h2>Icône de profil</h2>
+    <div class="avatar-pick" id="pf-avpick"></div>
+  </div>
+  <div class="card"><h2>Pseudo</h2>
+    <div class="row"><input id="pf-name-in" maxlength="24"><button id="pf-name-save">Enregistrer</button></div>
+  </div>
+  <div class="card" id="pf-pwd-card"><h2>Mot de passe</h2>
+    <div class="row"><input id="pf-pwd-old" type="password" placeholder="Mot de passe actuel"></div>
+    <div class="row"><input id="pf-pwd-new" type="password" placeholder="Nouveau mot de passe (6+ caractères)"><button id="pf-pwd-save">Changer</button></div>
+    <div class="row"><button class="sec" id="pf-pwd-forgot" style="background:none;border:0;padding:0;color:var(--mut);text-decoration:underline">Mot de passe actuel oublié ? Recevoir un lien par email</button></div>
+  </div>
+  <button class="sec" id="pf-back">Retour</button>
+</section>
+
 <section id="game" hidden>
   <div class="card">
     <div class="clock"><span id="oppn"></span><b id="oppc"></b></div>
@@ -60,14 +89,14 @@
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {firebaseConfig} from "./config.js";
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,updateProfile,signOut,GoogleAuthProvider,signInWithPopup} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,updateProfile,signOut,GoogleAuthProvider,signInWithPopup,EmailAuthProvider,reauthenticateWithCredential,updatePassword,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getFirestore,doc,getDoc,setDoc,addDoc,updateDoc,collection,query,where,onSnapshot,runTransaction,writeBatch,increment,arrayUnion,orderBy,limit,getDocs} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 /* ========================================================================================= */
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 const $=id=>document.getElementById(id);
 const PC={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
 const msg=t=>$('msg').textContent=t||'';
-const show=v=>['auth','home','game'].forEach(x=>$(x).hidden=x!==v);
+const show=v=>['auth','home','game','profile'].forEach(x=>$(x).hidden=x!==v);
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let me=null,G=null,sel=null,unsubG=null,unsubL=null,pendingName='';
 
@@ -81,16 +110,16 @@ function ensureProfile(u,name){
     for(let i=0;i<40;i++){
       const code=String(Math.floor(Math.random()*10000)).padStart(4,'0');
       try{await setDoc(doc(db,'codes',code),{uid:u.uid})}catch(e){continue}   // refusé si le code existe déjà
-      const p={name:nm,code,wins:0,played:0};await setDoc(r,p);return p;
+      const p={name:nm,code,wins:0,losses:0,draws:0,played:0,avatar:0};await setDoc(r,p);return p;
     }
     throw new Error('plus de code libre');
   })());
 }
 onAuthStateChanged(auth,async u=>{
-  if(!u){me=null;$('out').hidden=true;show('auth');return}
-  try{const p=await ensureProfile(u,pendingName);me={id:u.uid,name:p.name,code:p.code}}
+  if(!u){me=null;$('out').hidden=true;$('avbtn').hidden=true;show('auth');return}
+  try{const p=await ensureProfile(u,pendingName);me={id:u.uid,name:p.name,code:p.code,avatar:p.avatar||0,fbUser:u}}
   catch(e){msg('Erreur de profil : '+e.message);return}
-  $('out').hidden=false;
+  $('out').hidden=false;$('avbtn').hidden=false;setAvatarBtn();
   if(location.hash.startsWith('#g='))openGame(location.hash.slice(3));else goHome();
 });
 const fbErr=e=>({'auth/invalid-credential':'Email ou mot de passe incorrect.','auth/email-already-in-use':'Cet email a déjà un compte.','auth/weak-password':'Mot de passe trop court (6 caractères minimum).','auth/invalid-email':'Email invalide.'}[e.code]||e.message);
@@ -105,6 +134,69 @@ $('out').onclick=()=>signOut(auth);
 $('google').onclick=async()=>{
   try{msg('');await signInWithPopup(auth,new GoogleAuthProvider())}
   catch(e){if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request')msg(fbErr(e))}
+};
+$('forgot').onclick=async()=>{
+  const email=$('email').value.trim();
+  if(!email)return msg('Écris ton email dans le champ ci-dessus, puis reclique sur ce lien.');
+  try{await sendPasswordResetEmail(auth,email);msg('Email envoyé à '+email+' : suis le lien pour choisir un nouveau mot de passe.')}
+  catch(e){msg(fbErr(e))}
+};
+
+/* ---------- profil & avatar ---------- */
+const AVATARS=[['♞','#c9974a'],['♛','#7fa072'],['♜','#5c84b0'],['♝','#b6584a'],['♚','#9c72b0'],['♟','#3fa79c']];
+const avEl=i=>{const[p,c]=AVATARS[i]||AVATARS[0],e=document.createElement('span');e.style.setProperty('--av',c);e.textContent=p;return e};
+function setAvatarBtn(){
+  ['avbtn','pf-av'].forEach(id=>{const b=$(id);b.innerHTML='';b.appendChild(avEl(me.avatar))});
+}
+$('avbtn').onclick=()=>openProfile();
+$('pf-back').onclick=goHome;
+async function openProfile(){
+  show('profile');msg('');
+  $('pf-name').textContent=me.name;$('pf-code').textContent=me.code;$('pf-name-in').value=me.name;
+  $('pf-since').textContent=new Date(me.fbUser.metadata.creationTime).toLocaleDateString('fr-FR',{year:'numeric',month:'long'});
+  const isGoogleOnly=me.fbUser.providerData.every(p=>p.providerId!=='password');
+  $('pf-pwd-card').hidden=isGoogleOnly;
+  const doc0=await getDoc(doc(db,'users',me.id)),d=doc0.data();
+  const played=d.played||0,wins=d.wins||0,losses=d.losses||0,draws=d.draws||0;
+  $('pf-stats').innerHTML='';
+  [['Victoires',wins],['Défaites',losses],['Nulles',draws],['Parties',played],
+   ['Taux de victoire',played?Math.round(wins/played*100)+'%':'—']]
+    .forEach(([label,val])=>{
+      const s=document.createElement('div');s.className='stat';
+      s.innerHTML=`<b></b><span>${esc(label)}</span>`;s.querySelector('b').textContent=val;
+      $('pf-stats').appendChild(s);
+    });
+  const pk=$('pf-avpick');pk.innerHTML='';
+  AVATARS.forEach((_,i)=>{
+    const b=document.createElement('button');b.className='avatar'+(i===me.avatar?' on':'');b.appendChild(avEl(i));
+    b.onclick=async()=>{
+      me.avatar=i;setAvatarBtn();pk.querySelectorAll('.avatar').forEach((e,j)=>e.classList.toggle('on',j===i));
+      try{await updateDoc(doc(db,'users',me.id),{avatar:i})}catch(e){msg('Erreur : '+e.message)}
+    };
+    pk.appendChild(b);
+  });
+}
+$('pf-name-save').onclick=async()=>{
+  const name=$('pf-name-in').value.trim();if(!name)return msg('Choisis un pseudo.');
+  try{
+    await updateProfile(me.fbUser,{displayName:name});
+    await updateDoc(doc(db,'users',me.id),{name});
+    me.name=name;$('pf-name').textContent=name;msg('Pseudo mis à jour.');
+  }catch(e){msg('Erreur : '+e.message)}
+};
+$('pf-pwd-save').onclick=async()=>{
+  const oldp=$('pf-pwd-old').value,newp=$('pf-pwd-new').value;
+  if(newp.length<6)return msg('Le nouveau mot de passe doit faire 6 caractères ou plus.');
+  try{
+    await reauthenticateWithCredential(me.fbUser,EmailAuthProvider.credential(me.fbUser.email,oldp));
+    await updatePassword(me.fbUser,newp);
+    $('pf-pwd-old').value='';$('pf-pwd-new').value='';msg('Mot de passe changé.');
+  }catch(e){msg(fbErr(e))}
+};
+
+$('pf-pwd-forgot').onclick=async()=>{
+  try{await sendPasswordResetEmail(auth,me.fbUser.email);msg('Email envoyé à '+me.fbUser.email+'.')}
+  catch(e){msg(fbErr(e))}
 };
 
 /* ---------- accueil / défis ---------- */
@@ -330,7 +422,9 @@ async function save(id,patch){
   const r=G.row,b=writeBatch(db);
   b.update(ref,patch);
   for(const u of [r.white,r.black]){
-    const inc={played:increment(1)};if(patch.winner&&patch.winner===u)inc.wins=increment(1);
+    const inc={played:increment(1)};
+    if(patch.winner)inc[patch.winner===u?'wins':'losses']=increment(1);
+    else inc.draws=increment(1);
     b.update(doc(db,'users',u),inc);
   }
   await b.commit();
