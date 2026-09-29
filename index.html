@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/png" href="chess-friend-favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -101,23 +102,29 @@ const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 let me=null,G=null,sel=null,unsubG=null,unsubL=null,pendingName='';
 
 /* ---------- comptes ---------- */
+const DEV_EMAILS=['enoe.pro@gmail.com','enoe.theone@gmail.com','emile.glinche.49@gmail.com'];
 const profs={};
 function ensureProfile(u,name){
   return profs[u.uid]||(profs[u.uid]=(async()=>{
     const r=doc(db,'users',u.uid),s=await getDoc(r);
-    if(s.exists())return s.data();
+    const isDev=DEV_EMAILS.includes((u.email||'').toLowerCase());
+    if(s.exists()){
+      const d=s.data();
+      if(isDev&&!d.dev){try{await updateDoc(r,{dev:true})}catch(e){}d.dev=true}
+      return d;
+    }
     const nm=name||u.displayName||u.email.split('@')[0];
     for(let i=0;i<40;i++){
       const code=String(Math.floor(Math.random()*10000)).padStart(4,'0');
       try{await setDoc(doc(db,'codes',code),{uid:u.uid})}catch(e){continue}   // refusé si le code existe déjà
-      const p={name:nm,code,wins:0,losses:0,draws:0,played:0,avatar:0};await setDoc(r,p);return p;
+      const p={name:nm,code,wins:0,losses:0,draws:0,played:0,avatar:0,dev:isDev};await setDoc(r,p);return p;
     }
     throw new Error('plus de code libre');
   })());
 }
 onAuthStateChanged(auth,async u=>{
   if(!u){me=null;$('out').hidden=true;$('avbtn').hidden=true;show('auth');return}
-  try{const p=await ensureProfile(u,pendingName);me={id:u.uid,name:p.name,code:p.code,avatar:p.avatar||0,fbUser:u}}
+  try{const p=await ensureProfile(u,pendingName);me={id:u.uid,name:p.name,code:p.code,avatar:p.avatar||0,dev:!!p.dev,fbUser:u}}
   catch(e){msg('Erreur de profil : '+e.message);return}
   $('out').hidden=false;$('avbtn').hidden=false;setAvatarBtn();
   if(location.hash.startsWith('#g='))openGame(location.hash.slice(3));else goHome();
@@ -144,15 +151,19 @@ $('forgot').onclick=async()=>{
 
 /* ---------- profil & avatar ---------- */
 const AVATARS=[['♞','#c9974a'],['♛','#7fa072'],['♜','#5c84b0'],['♝','#b6584a'],['♚','#9c72b0'],['♟','#3fa79c']];
-const avEl=i=>{const[p,c]=AVATARS[i]||AVATARS[0],e=document.createElement('span');e.style.setProperty('--av',c);e.textContent=p;return e};
+const avEl=(i,dev)=>{
+  const e=document.createElement('span');
+  if(dev){e.style.setProperty('--av','linear-gradient(155deg,#e8c869,#a9791f)');e.textContent='🏵️';return e}
+  const[p,c]=AVATARS[i]||AVATARS[0];e.style.setProperty('--av',c);e.textContent=p;return e;
+};
 function setAvatarBtn(){
-  ['avbtn','pf-av'].forEach(id=>{const b=$(id);b.innerHTML='';b.appendChild(avEl(me.avatar))});
+  ['avbtn','pf-av'].forEach(id=>{const b=$(id);b.innerHTML='';b.appendChild(avEl(me.avatar,me.dev))});
 }
 $('avbtn').onclick=()=>openProfile();
 $('pf-back').onclick=goHome;
 async function openProfile(){
   show('profile');msg('');
-  $('pf-name').textContent=me.name;$('pf-code').textContent=me.code;$('pf-name-in').value=me.name;
+  $('pf-name').textContent=me.name+(me.dev?' [DEV]':'');$('pf-code').textContent=me.code;$('pf-name-in').value=me.name;
   $('pf-since').textContent=new Date(me.fbUser.metadata.creationTime).toLocaleDateString('fr-FR',{year:'numeric',month:'long'});
   const isGoogleOnly=me.fbUser.providerData.every(p=>p.providerId!=='password');
   $('pf-pwd-card').hidden=isGoogleOnly;
@@ -167,6 +178,7 @@ async function openProfile(){
       $('pf-stats').appendChild(s);
     });
   const pk=$('pf-avpick');pk.innerHTML='';
+  if(me.dev){pk.innerHTML='<p class="small">Icône fixée automatiquement pour les comptes développeur.</p>';return}
   AVATARS.forEach((_,i)=>{
     const b=document.createElement('button');b.className='avatar'+(i===me.avatar?' on':'');b.appendChild(avEl(i));
     b.onclick=async()=>{
@@ -230,6 +242,7 @@ async function challenge(inv){
   const g={fen:new Chess().fen(),tc_base:base,tc_inc:inc,white_ms:base*1000,black_ms:base*1000,last_at:0,status:'open',
     mode:$('mode').value,moves:'',invited:inv||null,created:Date.now(),players:[me.id],
     white:w?me.id:null,black:w?null:me.id,white_name:w?me.name:'',black_name:w?'':me.name,
+    white_dev:w?me.dev:false,black_dev:w?false:me.dev,
     winner:null,result:'',hq_w:'',hq_b:'',rev_w:false,rev_b:false};
   try{const r=await addDoc(collection(db,'games'),g);openGame(r.id)}
   catch(e){msg('Impossible de créer le défi : '+e.message)}
@@ -245,7 +258,7 @@ async function openGame(id){
       const g=s.data();
       if(g.status==='open'&&!g.players.includes(me.id)){
         const p={status:'active',last_at:Date.now(),players:arrayUnion(me.id)};
-        if(!g.white){p.white=me.id;p.white_name=me.name}else{p.black=me.id;p.black_name=me.name}
+        if(!g.white){p.white=me.id;p.white_name=me.name;p.white_dev=me.dev}else{p.black=me.id;p.black_name=me.name;p.black_dev=me.dev}
         t.update(ref,p);
       }
     });
@@ -329,12 +342,12 @@ function render(){
   const r=G.row,res=result(),flip=G.side==='b',hq=hqOn(),ready=hqReady();
   const picked=hq&&G.side?r['hq_'+G.side]:'x';
   if(G.mode==='bot'){
-    $('oppn').textContent='Bot ('+['','Débutant','Facile','Moyen','Fort'][G.lvl]+')';$('myn').textContent=me.name;
+    $('oppn').textContent='Bot ('+['','Débutant','Facile','Moyen','Fort'][G.lvl]+')';$('myn').textContent=me.name+(me.dev?' [DEV]':'');
     $('myc').textContent=$('oppc').textContent='';$('link').textContent='';
   }else{
     const my=G.side||'w';
-    $('myn').textContent=(my==='w'?r.white_name:r.black_name)||'…';
-    $('oppn').textContent=(my==='w'?r.black_name:r.white_name)||'En attente d\'un adversaire…';
+    $('myn').textContent=((my==='w'?r.white_name:r.black_name)||'…')+((my==='w'?r.white_dev:r.black_dev)?' [DEV]':'');
+    $('oppn').textContent=((my==='w'?r.black_name:r.white_name)||'En attente d\'un adversaire…')+((my==='w'?r.black_dev:r.white_dev)?' [DEV]':'');
     $('link').textContent=r.status==='open'?'Lien à envoyer : '+location.href:'';
     clocks();
   }
