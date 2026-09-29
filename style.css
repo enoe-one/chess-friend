@@ -1,0 +1,30 @@
+:root{--bg:#16212b;--card:#1f2e3b;--fg:#e9eef2;--mut:#93a4b3;--ac:#f2b134;--l:#dfe6ec;--d:#6f8ba3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Avenir Next","Segoe UI",system-ui,sans-serif;display:flex;justify-content:center}
+main{width:100%;max-width:520px;padding:16px}
+h1{font-size:1.4rem;margin:8px 0 14px;display:flex;justify-content:space-between;align-items:center}
+h2{font-size:1rem;margin:0 0 10px}
+.card{background:var(--card);border-radius:10px;padding:14px;margin-bottom:12px}
+button,input,select{font:inherit;padding:9px 12px;border-radius:8px;border:1px solid #ffffff22;background:#0002;color:var(--fg)}
+button{background:var(--ac);color:#1a1200;border:0;font-weight:600;cursor:pointer}
+button.sec{background:transparent;color:var(--fg);border:1px solid #ffffff44}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+input{flex:1;min-width:120px}
+#msg{color:var(--ac);min-height:1.3em}
+.list div{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid #ffffff14}
+#board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;border-radius:6px;overflow:hidden;position:relative}
+.sq{display:flex;align-items:center;justify-content:center;font-size:clamp(24px,8.5vw,46px);cursor:pointer;user-select:none;position:relative}
+.sq.l{background:var(--l)}.sq.d{background:var(--d)}
+.sq.sel{box-shadow:inset 0 0 0 4px var(--ac)}
+.sq.t::after{content:"";width:28%;height:28%;border-radius:50%;background:#0004;position:absolute}
+.w{color:#fff;text-shadow:0 0 2px #000,0 0 2px #000,0 0 3px #000}.b{color:#111}
+.clock{display:flex;justify-content:space-between;font-size:1.1rem;padding:6px 2px}
+.clock b{font-variant-numeric:tabular-nums;background:#0003;padding:2px 10px;border-radius:6px}
+.clock b.on{background:var(--ac);color:#1a1200}
+#promo{position:absolute;inset:0;background:#000a;display:none;align-items:center;justify-content:center;gap:10px;z-index:5}
+#promo button{font-size:2.4rem;padding:6px 14px;background:var(--l);color:#111}
+.small{color:var(--mut);font-size:.85rem;word-break:break-all}
+.mvs{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:8px}
+.mv{padding:3px 8px;font-weight:500;background:#0003;color:var(--fg)}
+.hq span{filter:drop-shadow(0 0 5px #f2b134) drop-shadow(0 0 2px #f2b134)}
+.mv i{font-style:normal;color:#fff;border-radius:4px;padding:0 4px;font-size:.8rem}
