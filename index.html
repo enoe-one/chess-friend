@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Échecs entre amis</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="chess.min.js"></script>
 <link rel="stylesheet" href="style.css"></head>
 <body><main>
 <h1><span>♞ Échecs entre amis</span><button class="sec" id="out" hidden>Déconnexion</button></h1>
@@ -376,8 +376,7 @@ const BADGE={brilliant:['Brillant','!!','#1baca6'],best:['Meilleur coup','★','
 let sf=null;
 async function engine(){
   if(sf)return sf;
-  const t=await(await fetch('https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js')).text();
-  sf=new Worker(URL.createObjectURL(new Blob([t],{type:'text/javascript'})));
+  sf=new Worker('stockfish.js');
   sf.postMessage('uci');return sf;
 }
 function evalPos(fen,depth){
