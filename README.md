@@ -67,4 +67,4 @@ Le projet est ouvert aux contributions : idées, corrections de bugs, nouvelles 
 
 ## Licence
 
-Ce projet est open source. Ajoute ici la licence de ton choix (par exemple MIT) si tu comptes le publier officiellement.
+Ce projet est open source.
