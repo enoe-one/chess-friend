@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Administration · Échecs entre amis</title>
+<link rel="icon" type="image/png" href="chess-friend-favicon.png">
+<link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1><a class="brand" href="index.html"><span class="knight">♞</span>Échecs entre amis</a>
+  <span class="row who" id="who" style="margin:0" hidden>
+    <span id="whoname" class="small" style="color:var(--fg);font-weight:600"></span>
+    <button class="avatar" id="avbtn"></button>
+    <button class="sec" id="out">Déconnexion</button>
+  </span>
+</h1>
+<p id="msg"></p>
+
+<div class="grid-wrap">
+  <div class="card"><h2>🛠️ Console d'administration</h2>
+    <p class="small">Réservée aux comptes développeur.</p>
+    <div class="row"><input id="adm-code" maxlength="4" inputmode="numeric" placeholder="Code du joueur (4 chiffres)"><button id="adm-search">Chercher</button></div>
+  </div>
+
+  <div class="card"><h2>Classements</h2>
+    <p class="small">Remet à zéro le compteur choisi pour <b>tous les joueurs</b>. Action irréversible.</p>
+    <div class="row"><button class="sec" id="rst-week">Réinitialiser la semaine</button></div>
+    <div class="row"><button class="sec" id="rst-month">Réinitialiser le mois</button></div>
+    <div class="row"><button class="danger" id="rst-all">Réinitialiser le classement universel</button></div>
+  </div>
+</div>
+
+<div id="adm-result"></div>
+<button class="sec" id="adm-back">Retour à l'accueil</button>
+</main>
+
+<script type="module">
+import {$,esc,initAuthGuard,db,auth,weekKey,monthKey} from "./common.js";
+import {sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {doc,getDoc,updateDoc,collection,getDocs,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const msg=t=>$('msg').textContent=t||'';
+$('adm-back').onclick=()=>location.href='index.html';
+
+initAuthGuard({devOnly:true,onReady(){}});
+
+$('adm-search').onclick=async()=>{
+  const code=$('adm-code').value.trim(),res=$('adm-result');
+  if(!code)return;
+  res.innerHTML='<p class="small">Recherche…</p>';
+  try{
+    const c=await getDoc(doc(db,'codes',code));
+    if(!c.exists()){res.innerHTML='<p class="small">Code inconnu.</p>';return}
+    const uid=c.data().uid,ds=await getDoc(doc(db,'users',uid));
+    if(!ds.exists()){res.innerHTML='<p class="small">Profil introuvable.</p>';return}
+    renderAdmin(uid,ds.data());
+  }catch(e){res.innerHTML='<p class="small">Erreur : '+esc(e.message)+'</p>'}
+};
+function renderAdmin(uid,d){
+  const res=$('adm-result');res.innerHTML='';
+  const card=document.createElement('div');card.className='card adm-card';
+  card.innerHTML=`<h2>${esc(d.name)}${d.dev?' 🏵️':''}${d.banned?' · <span style="color:var(--bad)">compte banni</span>':''}${d.deleted?' · <span style="color:var(--mut)">compte supprimé</span>':''}</h2>
+    <div class="row">
+      <label>Victoires<input id="adm-w" type="number" value="${d.wins||0}" style="width:76px"></label>
+      <label>Défaites<input id="adm-l" type="number" value="${d.losses||0}" style="width:76px"></label>
+      <label>Nulles<input id="adm-dr" type="number" value="${d.draws||0}" style="width:76px"></label>
+      <label>Parties<input id="adm-p" type="number" value="${d.played||0}" style="width:76px"></label>
+    </div>
+    <div class="row"><button id="adm-save">Enregistrer les statistiques universelles</button></div>
+    <div class="row"><button class="sec" id="adm-reset-wk">Réinitialiser sa semaine</button><button class="sec" id="adm-reset-mo">Réinitialiser son mois</button></div>
+    <div class="row"><button class="${d.banned?'sec':'danger'}" id="adm-ban">${d.banned?'Débannir':'Bannir'}</button></div>
+    <div class="row"><button class="sec" id="adm-reset"${d.email?'':' disabled'}>Envoyer un lien de réinitialisation du mot de passe</button></div>
+    <p class="small">Changer directement le mot de passe d'un autre compte n'est pas possible sans serveur dédié ; le lien ci-dessus est l'équivalent le plus proche.</p>`;
+  res.appendChild(card);
+  $('adm-save').onclick=async()=>{
+    try{
+      await updateDoc(doc(db,'users',uid),{wins:+$('adm-w').value,losses:+$('adm-l').value,draws:+$('adm-dr').value,played:+$('adm-p').value});
+      msg('Statistiques mises à jour.');
+    }catch(e){msg('Erreur : '+e.message)}
+  };
+  $('adm-reset-wk').onclick=async()=>{
+    try{await updateDoc(doc(db,'users',uid),{weekKey:weekKey(),weekWins:0,weekPlayed:0});msg('Semaine réinitialisée pour '+d.name+'.')}
+    catch(e){msg('Erreur : '+e.message)}
+  };
+  $('adm-reset-mo').onclick=async()=>{
+    try{await updateDoc(doc(db,'users',uid),{monthKey:monthKey(),monthWins:0,monthPlayed:0});msg('Mois réinitialisé pour '+d.name+'.')}
+    catch(e){msg('Erreur : '+e.message)}
+  };
+  $('adm-ban').onclick=async()=>{
+    try{await updateDoc(doc(db,'users',uid),{banned:!d.banned});d.banned=!d.banned;renderAdmin(uid,d)}
+    catch(e){msg('Erreur : '+e.message)}
+  };
+  $('adm-reset').onclick=async()=>{
+    if(!d.email)return;
+    try{await sendPasswordResetEmail(auth,d.email);msg('Email envoyé à '+d.email+'.')}
+    catch(e){msg('Erreur : '+e.message)}
+  };
+}
+
+async function bulkReset(fields,label){
+  if(!confirm('Réinitialiser '+label+' pour TOUS les joueurs ? Cette action est irréversible.'))return;
+  msg('Réinitialisation en cours…');
+  try{
+    const docs=(await getDocs(collection(db,'users'))).docs;
+    for(let i=0;i<docs.length;i+=400){
+      const batch=writeBatch(db);
+      docs.slice(i,i+400).forEach(d=>batch.update(d.ref,fields));
+      await batch.commit();
+    }
+    msg(label+' réinitialisé pour '+docs.length+' joueur(s).');
+  }catch(e){msg('Erreur : '+e.message)}
+}
+$('rst-week').onclick=()=>bulkReset({weekKey:weekKey(),weekWins:0,weekPlayed:0},'le classement hebdomadaire');
+$('rst-month').onclick=()=>bulkReset({monthKey:monthKey(),monthWins:0,monthPlayed:0},'le classement mensuel');
+$('rst-all').onclick=()=>bulkReset({wins:0,losses:0,draws:0,played:0},'le classement universel');
+</script></body></html>

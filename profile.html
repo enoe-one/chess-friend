@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Profil · Échecs entre amis</title>
+<link rel="icon" type="image/png" href="chess-friend-favicon.png">
+<link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1><a class="brand" href="index.html"><span class="knight">♞</span>Échecs entre amis</a>
+  <span class="row who" id="who" style="margin:0" hidden>
+    <span id="whoname" class="small" style="color:var(--fg);font-weight:600"></span>
+    <button class="avatar" id="avbtn"></button>
+    <button class="sec" id="out">Déconnexion</button>
+  </span>
+</h1>
+<p id="msg"></p>
+
+<div class="grid-wrap">
+  <div class="card">
+    <div class="row" style="align-items:center;gap:14px">
+      <button class="avatar big" id="pf-av"></button>
+      <div><div id="pf-name" style="font-family:var(--serif);font-size:1.2rem;font-weight:600"></div>
+        <div class="small">membre depuis <span id="pf-since"></span></div></div>
+    </div>
+    <div class="stats" id="pf-stats"></div>
+  </div>
+
+  <div class="card"><h2>Icône de profil</h2>
+    <div class="avatar-pick" id="pf-avpick"></div>
+  </div>
+
+  <div class="card"><h2>Description</h2>
+    <div class="row"><input id="pf-bio-in" maxlength="80" placeholder="Une petite phrase sur toi…"><button id="pf-bio-save">Enregistrer</button></div>
+  </div>
+
+  <div class="card"><h2>Pseudo</h2>
+    <div class="row"><input id="pf-name-in" maxlength="24"><button id="pf-name-save">Enregistrer</button></div>
+  </div>
+
+  <div class="card" id="pf-email-card"><h2>Adresse email</h2>
+    <p class="small">Adresse actuelle : <b id="pf-email-cur"></b></p>
+    <div class="row"><input id="pf-email-in" type="email" placeholder="Nouvelle adresse email"></div>
+    <div class="row"><input id="pf-email-pwd" type="password" placeholder="Mot de passe actuel (confirmation)"><button id="pf-email-save">Envoyer le lien de confirmation</button></div>
+    <p class="small">Un email de confirmation est envoyé à la nouvelle adresse ; le changement ne prend effet qu'après avoir cliqué dessus.</p>
+  </div>
+
+  <div class="card" id="pf-pwd-card"><h2>Mot de passe</h2>
+    <div class="row"><input id="pf-pwd-old" type="password" placeholder="Mot de passe actuel"></div>
+    <div class="row"><input id="pf-pwd-new" type="password" placeholder="Nouveau mot de passe (6+ caractères)"><button id="pf-pwd-save">Changer</button></div>
+    <div class="row"><button class="sec" id="pf-pwd-forgot" style="background:none;border:0;box-shadow:none;padding:0;color:var(--mut);text-decoration:underline">Mot de passe actuel oublié ? Recevoir un lien par email</button></div>
+  </div>
+
+  <div class="card zone-danger"><h2>Zone dangereuse</h2>
+    <p class="small">Supprimer ton compte t'efface définitivement des classements mensuel et hebdomadaire, ainsi que de la liste d'amis. Si tu détiens un record, ton pseudo reste affiché dans le classement universel.</p>
+    <div class="row"><input id="pf-del-confirm" placeholder="Tape SUPPRIMER pour confirmer"></div>
+    <div class="row" id="pf-del-pwd-row"><input id="pf-del-pwd" type="password" placeholder="Mot de passe actuel (confirmation)"></div>
+    <div class="row"><button class="danger" id="pf-del-btn" disabled>Supprimer définitivement mon compte</button></div>
+  </div>
+</div>
+<button class="sec" id="pf-back">Retour à l'accueil</button>
+</main>
+
+<script type="module">
+import {$,esc,avEl,AVATARS,initAuthGuard,db,auth,weekKey,monthKey} from "./common.js";
+import {EmailAuthProvider,reauthenticateWithCredential,reauthenticateWithPopup,GoogleAuthProvider,updateProfile,updatePassword,sendPasswordResetEmail,verifyBeforeUpdateEmail,deleteUser} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {doc,getDoc,updateDoc,deleteDoc,collection,getDocs} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const msg=t=>$('msg').textContent=t||'';
+let me=null;
+
+$('pf-back').onclick=()=>location.href='index.html';
+
+function setAvatarBtn(){
+  const b=$('pf-av');b.innerHTML='';b.appendChild(avEl(me.avatar,me.dev));
+}
+async function reauth(pwd){
+  const isGoogleOnly=me.fbUser.providerData.every(p=>p.providerId!=='password');
+  if(isGoogleOnly)await reauthenticateWithPopup(me.fbUser,new GoogleAuthProvider());
+  else await reauthenticateWithCredential(me.fbUser,EmailAuthProvider.credential(me.fbUser.email,pwd));
+}
+
+initAuthGuard({onReady(m){
+  me=m;openProfile();
+}});
+
+async function openProfile(){
+  msg('');
+  $('pf-name').textContent=me.name+(me.dev?' [DEV]':'');$('pf-name-in').value=me.name;
+  $('pf-since').textContent=new Date(me.fbUser.metadata.creationTime).toLocaleDateString('fr-FR',{year:'numeric',month:'long'});
+  $('pf-email-cur').textContent=me.fbUser.email||'(compte Google sans email visible)';
+  const isGoogleOnly=me.fbUser.providerData.every(p=>p.providerId!=='password');
+  $('pf-pwd-card').hidden=isGoogleOnly;
+  $('pf-email-card').hidden=isGoogleOnly;
+  $('pf-del-pwd-row').hidden=isGoogleOnly;
+  setAvatarBtn();
+  const doc0=await getDoc(doc(db,'users',me.id)),d=doc0.data();
+  $('pf-bio-in').value=d.bio||'';
+  const played=d.played||0,wins=d.wins||0,losses=d.losses||0,draws=d.draws||0;
+  $('pf-stats').innerHTML='';
+  [['Victoires',wins],['Défaites',losses],['Nulles',draws],['Parties',played],
+   ['Taux de victoire',played?Math.round(wins/played*100)+'%':'—'],
+   ['Victoires ce mois',d.monthKey===monthKey()?(d.monthWins||0):0],
+   ['Victoires cette semaine',d.weekKey===weekKey()?(d.weekWins||0):0]]
+    .forEach(([label,val])=>{
+      const s=document.createElement('div');s.className='stat';
+      s.innerHTML=`<b></b><span>${esc(label)}</span>`;s.querySelector('b').textContent=val;
+      $('pf-stats').appendChild(s);
+    });
+  const pk=$('pf-avpick');pk.innerHTML='';
+  if(me.dev){pk.innerHTML='<p class="small">Icône fixée automatiquement pour les comptes développeur.</p>'}
+  else AVATARS.forEach((_,i)=>{
+    const b=document.createElement('button');b.className='avatar'+(i===me.avatar?' on':'');b.appendChild(avEl(i));
+    b.onclick=async()=>{
+      me.avatar=i;setAvatarBtn();pk.querySelectorAll('.avatar').forEach((e,j)=>e.classList.toggle('on',j===i));
+      try{await updateDoc(doc(db,'users',me.id),{avatar:i})}catch(e){msg('Erreur : '+e.message)}
+    };
+    pk.appendChild(b);
+  });
+}
+
+$('pf-bio-save').onclick=async()=>{
+  const bio=$('pf-bio-in').value.trim();
+  try{await updateDoc(doc(db,'users',me.id),{bio});msg('Description enregistrée.')}
+  catch(e){msg('Erreur : '+e.message)}
+};
+$('pf-name-save').onclick=async()=>{
+  const name=$('pf-name-in').value.trim();if(!name)return msg('Choisis un pseudo.');
+  try{
+    await updateProfile(me.fbUser,{displayName:name});
+    await updateDoc(doc(db,'users',me.id),{name});
+    me.name=name;$('pf-name').textContent=name+(me.dev?' [DEV]':'');msg('Pseudo mis à jour.');
+  }catch(e){msg('Erreur : '+e.message)}
+};
+$('pf-email-save').onclick=async()=>{
+  const email=$('pf-email-in').value.trim();
+  if(!email)return msg('Écris ta nouvelle adresse email.');
+  try{
+    await reauth($('pf-email-pwd').value);
+    await verifyBeforeUpdateEmail(me.fbUser,email);
+    msg('Email de confirmation envoyé à '+email+'. Le changement prendra effet une fois le lien ouvert.');
+    $('pf-email-in').value='';$('pf-email-pwd').value='';
+  }catch(e){msg('Erreur : '+(e.code==='auth/requires-recent-login'?'Reconnecte-toi puis réessaie.':e.message))}
+};
+$('pf-pwd-save').onclick=async()=>{
+  const oldp=$('pf-pwd-old').value,newp=$('pf-pwd-new').value;
+  if(newp.length<6)return msg('Le nouveau mot de passe doit faire 6 caractères ou plus.');
+  try{
+    await reauth(oldp);
+    await updatePassword(me.fbUser,newp);
+    $('pf-pwd-old').value='';$('pf-pwd-new').value='';msg('Mot de passe changé.');
+  }catch(e){msg('Erreur : '+e.message)}
+};
+$('pf-pwd-forgot').onclick=async()=>{
+  try{await sendPasswordResetEmail(auth,me.fbUser.email);msg('Email envoyé à '+me.fbUser.email+'.')}
+  catch(e){msg('Erreur : '+e.message)}
+};
+
+$('pf-del-confirm').oninput=()=>{$('pf-del-btn').disabled=$('pf-del-confirm').value.trim().toUpperCase()!=='SUPPRIMER'};
+$('pf-del-btn').onclick=async()=>{
+  if(!confirm('Dernière confirmation : supprimer ton compte est définitif. Continuer ?'))return;
+  try{
+    await reauth($('pf-del-pwd').value);
+    // on efface les traces courantes (amis, semaine, mois) mais on garde le pseudo et les stats
+    // universelles si elles constituent un record, pour le classement universel
+    const code=me.code;
+    await updateDoc(doc(db,'users',me.id),{bio:'',email:'',lastSeen:0,deleted:true});
+    await updateDoc(doc(db,'users',me.id),{weekKey:'',weekWins:0,weekPlayed:0,monthKey:'',monthWins:0,monthPlayed:0});
+    const fr=await getDocs(collection(db,'users',me.id,'friends'));
+    for(const d of fr.docs)await deleteDoc(d.ref).catch(()=>{});
+    await deleteDoc(doc(db,'codes',code)).catch(()=>{});
+    await deleteUser(me.fbUser);
+    location.href='index.html';
+  }catch(e){msg('Erreur : '+(e.code==='auth/requires-recent-login'?'Reconnecte-toi puis réessaie.':e.message))}
+};
+</script></body></html>

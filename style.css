@@ -114,3 +114,44 @@ section.appear>.card:nth-of-type(3),section.appear .tabpane:not([hidden])>.card:
 @keyframes popMsg{to{transform:scale(1)}}
 .confetti{position:absolute;top:-24px;font-size:1.5rem;animation:fall linear forwards;z-index:1}
 @keyframes fall{to{transform:translateY(115vh) rotate(360deg);opacity:.15}}
+
+/* utilisation de l'écran : plus large sur ordinateur, cartes réparties en grille */
+main{max-width:560px}
+h1 a.brand{color:inherit;text-decoration:none}
+@media (min-width:820px){
+  main{max-width:1120px}
+  .tabpane,.grid-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start}
+  .tabpane .card,.grid-wrap .card{margin-bottom:0}
+  .game-layout{display:flex;align-items:flex-start;gap:20px}
+  .game-layout>.board-col{flex:0 0 480px}
+  .game-layout>.side-col{flex:1;min-width:280px}
+}
+
+/* boutons plus vivants : effet de pression 3D */
+button{box-shadow:0 3px 0 #00000038,0 2px 5px #0004;transition:filter .15s,transform .08s,box-shadow .08s}
+button:active{transform:translateY(3px);box-shadow:0 0 0 #00000030,0 1px 2px #0003}
+button:disabled{box-shadow:none}
+button.sec{box-shadow:0 2px 0 #ffffff10,0 2px 5px #0003}
+
+/* barre d'onglets secondaire (classements) */
+.subtabs{display:flex;gap:6px;margin-bottom:10px}
+.subtab{background:none;border:1px solid #ffffff1e;color:var(--mut);font-weight:600;padding:6px 10px;box-shadow:none}
+.subtab.on{background:var(--ac2,var(--ac));color:var(--ac-ink);border-color:transparent}
+
+/* horloge en fin de temps */
+.clock b.low{color:#ffdcd6;background:var(--bad)!important;animation:lowTime .6s ease-in-out infinite}
+@keyframes lowTime{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+
+/* éclat sur une case où une pièce vient d'être prise */
+.sq.capture::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animation:captureFlash .4s ease-out forwards}
+@keyframes captureFlash{from{opacity:1}to{opacity:0}}
+
+/* zone dangereuse (suppression de compte) */
+.zone-danger{border-color:var(--bad)!important}
+
+/* un peu plus de vie */
+.knight{display:inline-block;animation:knightBounce 3.2s ease-in-out infinite}
+@keyframes knightBounce{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-10deg)}}
+.card{transition:transform .18s ease,box-shadow .18s ease}
+.card:hover{transform:translateY(-3px);box-shadow:0 8px 22px #0007}
+h1{border-bottom:1px solid #ffffff14;padding-bottom:12px}

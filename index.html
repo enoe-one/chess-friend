@@ -6,10 +6,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <title>Échecs entre amis</title>
 <link rel="icon" type="image/png" href="chess-friend-favicon.png">
-<script src="chess.min.js"></script>
 <link rel="stylesheet" href="style.css"></head>
 <body><main>
-<h1><span class="brand"><span class="knight">♞</span>Échecs entre amis</span>
+<h1><a class="brand" href="index.html"><span class="knight">♞</span>Échecs entre amis</a>
   <span class="row who" id="who" style="margin:0" hidden>
     <span id="whoname" class="small" style="color:var(--fg);font-weight:600"></span>
     <button class="avatar" id="avbtn"></button>
@@ -25,7 +24,7 @@
     <div class="row"><input id="pass" type="password" placeholder="Mot de passe (6+ caractères)"></div>
     <div class="row"><button id="login">Se connecter</button><button class="sec" id="signup">Créer un compte</button></div>
     <div class="row"><button class="sec" id="google">Continuer avec Google</button></div>
-    <div class="row"><button class="sec" id="forgot" style="background:none;border:0;padding:0;color:var(--mut);text-decoration:underline">Mot de passe oublié ?</button></div>
+    <div class="row"><button class="sec" id="forgot" style="background:none;border:0;box-shadow:none;padding:0;color:var(--mut);text-decoration:underline">Mot de passe oublié ?</button></div>
   </div>
 </section>
 
@@ -35,16 +34,17 @@
     <button class="tab" data-tab="live">🎥 Parties</button>
     <button class="tab" data-tab="friends">🤝 Amis</button>
     <button class="tab" data-tab="rank">🏆 Classement</button>
-    <button class="tab" id="admintab" data-tab="admin" hidden>🛠️ Admin</button>
+    <button class="tab" id="admintab" hidden onclick="location.href='admin.html'">🛠️ Admin</button>
   </nav>
 
   <div class="tabpane" id="tab-play">
     <div class="card"><h2>Jouer contre un bot</h2>
       <div class="row">
-        <select id="lvl"><option value="1">Débutant</option><option value="2">Facile</option><option value="3" selected>Moyen</option><option value="4">Fort</option></select>
+        <select id="lvl"><option value="1">Très facile</option><option value="2">Débutant</option><option value="3">Facile</option><option value="4" selected>Moyen</option><option value="5">Fort</option><option value="6">Hardcore</option></select>
         <select id="col"><option value="r">Couleur au hasard</option><option value="w">Blancs</option><option value="b">Noirs</option></select>
         <button id="bot">Jouer</button>
       </div>
+      <p class="small">Hardcore réfléchit plus longtemps : quelques secondes de pause à chaque coup sont normales.</p>
     </div>
     <div class="card"><h2>Lancer un défi</h2>
       <div class="row">
@@ -72,109 +72,27 @@
   </div>
 
   <div class="tabpane" id="tab-rank" hidden>
-    <div class="card"><h2>Classement</h2><div class="list" id="rank"></div><p class="small" id="myrank"></p></div>
-  </div>
-
-  <div class="tabpane" id="tab-admin" hidden>
-    <div class="card"><h2>Chercher un joueur</h2>
-      <div class="row"><input id="adm-code" maxlength="4" inputmode="numeric" placeholder="Code à 4 chiffres"><button id="adm-search">Chercher</button></div>
+    <div class="card">
+      <h2>Classement</h2>
+      <div class="subtabs">
+        <button class="subtab on" data-period="all">Universel</button>
+        <button class="subtab" data-period="month">Ce mois-ci</button>
+        <button class="subtab" data-period="week">Cette semaine</button>
+      </div>
+      <div class="list" id="rank"></div><p class="small" id="myrank"></p>
     </div>
-    <div id="adm-result"></div>
   </div>
 </section>
-
-<section id="profile" hidden>
-  <div class="card">
-    <div class="row" style="align-items:center;gap:14px">
-      <button class="avatar big" id="pf-av"></button>
-      <div><div id="pf-name" style="font-family:var(--serif);font-size:1.2rem;font-weight:600"></div>
-        <div class="small">membre depuis <span id="pf-since"></span></div></div>
-    </div>
-    <div class="stats" id="pf-stats"></div>
-  </div>
-  <div class="card"><h2>Icône de profil</h2>
-    <div class="avatar-pick" id="pf-avpick"></div>
-  </div>
-  <div class="card"><h2>Description</h2>
-    <div class="row"><input id="pf-bio-in" maxlength="80" placeholder="Une petite phrase sur toi…"><button id="pf-bio-save">Enregistrer</button></div>
-  </div>
-  <div class="card"><h2>Pseudo</h2>
-    <div class="row"><input id="pf-name-in" maxlength="24"><button id="pf-name-save">Enregistrer</button></div>
-  </div>
-  <div class="card" id="pf-pwd-card"><h2>Mot de passe</h2>
-    <div class="row"><input id="pf-pwd-old" type="password" placeholder="Mot de passe actuel"></div>
-    <div class="row"><input id="pf-pwd-new" type="password" placeholder="Nouveau mot de passe (6+ caractères)"><button id="pf-pwd-save">Changer</button></div>
-    <div class="row"><button class="sec" id="pf-pwd-forgot" style="background:none;border:0;padding:0;color:var(--mut);text-decoration:underline">Mot de passe actuel oublié ? Recevoir un lien par email</button></div>
-  </div>
-  <button class="sec" id="pf-back">Retour</button>
-</section>
-
-<section id="game" hidden>
-  <div class="card">
-    <div class="clock"><span id="oppn"></span><b id="oppc"></b></div>
-    <p class="small" id="oppbio"></p>
-    <div id="board"><div id="promo"></div></div>
-    <div class="clock"><span id="myn"></span><b id="myc"></b></div>
-    <p id="info"></p>
-    <p class="small" id="link"></p>
-    <div id="ana"></div>
-    <div class="row"><button id="analyse" hidden>Analyser la partie</button><button class="sec" id="resign">Abandonner</button><button class="sec" id="back">Retour</button></div>
-  </div>
-</section>
-<div id="bigend" class="bigend"></div>
 </main>
 
 <script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {firebaseConfig} from "./config.js";
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,updateProfile,signOut,GoogleAuthProvider,signInWithPopup,EmailAuthProvider,reauthenticateWithCredential,updatePassword,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getFirestore,doc,getDoc,setDoc,addDoc,updateDoc,collection,query,where,onSnapshot,runTransaction,writeBatch,increment,arrayUnion,orderBy,limit,getDocs} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-/* ========================================================================================= */
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-const $=id=>document.getElementById(id);
-const PC={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
+import {$,esc,tcName,avEl,initAuthGuard,db,auth,weekKey,monthKey} from "./common.js";
+import {signInWithEmailAndPassword,createUserWithEmailAndPassword,updateProfile,GoogleAuthProvider,signInWithPopup,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {doc,getDoc,setDoc,addDoc,updateDoc,collection,query,where,onSnapshot,runTransaction,arrayUnion,orderBy,limit,getDocs} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const msg=t=>$('msg').textContent=t||'';
-const show=v=>{
-  ['auth','home','game','profile'].forEach(x=>$(x).hidden=x!==v);
-  const el=$(v);el.classList.remove('appear');void el.offsetWidth;el.classList.add('appear');
-};
-const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let me=null,G=null,sel=null,unsubG=null,unsubL=null,pendingName='';
+const show=v=>{['auth','home'].forEach(x=>$(x).hidden=x!==v);const el=$(v);el.classList.remove('appear');void el.offsetWidth;el.classList.add('appear')};
+let me=null,unsubL=null,pendingName='';
 
-/* ---------- comptes ---------- */
-const DEV_EMAILS=['enoe.pro@gmail.com','enoe.theone@gmail.com','emile.glinche.49@gmail.com'];
-const profs={};
-function ensureProfile(u,name){
-  return profs[u.uid]||(profs[u.uid]=(async()=>{
-    const r=doc(db,'users',u.uid),s=await getDoc(r);
-    const isDev=DEV_EMAILS.includes((u.email||'').toLowerCase());
-    if(s.exists()){
-      const d=s.data(),patch={};
-      if(isDev&&!d.dev)patch.dev=true;
-      if(!d.email&&u.email)patch.email=u.email;
-      if(Object.keys(patch).length){try{await updateDoc(r,patch)}catch(e){}Object.assign(d,patch)}
-      return d;
-    }
-    const nm=name||u.displayName||u.email.split('@')[0];
-    for(let i=0;i<40;i++){
-      const code=String(Math.floor(Math.random()*10000)).padStart(4,'0');
-      try{await setDoc(doc(db,'codes',code),{uid:u.uid})}catch(e){continue}   // refusé si le code existe déjà
-      const p={name:nm,code,email:u.email||'',wins:0,losses:0,draws:0,played:0,avatar:0,dev:isDev,bio:''};await setDoc(r,p);return p;
-    }
-    throw new Error('plus de code libre');
-  })());
-}
-onAuthStateChanged(auth,async u=>{
-  stopPresence();
-  if(!u){me=null;$('who').hidden=true;show('auth');return}
-  let p;
-  try{p=await ensureProfile(u,pendingName)}catch(e){msg('Erreur de profil : '+e.message);return}
-  if(p.banned){msg('Ton compte a été banni.');await signOut(auth);return}
-  me={id:u.uid,name:p.name,code:p.code,avatar:p.avatar||0,dev:!!p.dev,bio:p.bio||'',fbUser:u};
-  $('who').hidden=false;$('whoname').textContent=me.name+(me.dev?' 🏵️':'');$('admintab').hidden=!me.dev;setAvatarBtn();
-  startPresence();
-  if(location.hash.startsWith('#g='))openGame(location.hash.slice(3));else goHome();
-});
 const fbErr=e=>({'auth/invalid-credential':'Email ou mot de passe incorrect.','auth/email-already-in-use':'Cet email a déjà un compte.','auth/weak-password':'Mot de passe trop court (6 caractères minimum).','auth/invalid-email':'Email invalide.'}[e.code]||e.message);
 $('login').onclick=async()=>{try{msg('');await signInWithEmailAndPassword(auth,$('email').value,$('pass').value)}catch(e){msg(fbErr(e))}};
 $('signup').onclick=async()=>{
@@ -183,7 +101,6 @@ $('signup').onclick=async()=>{
   try{const c=await createUserWithEmailAndPassword(auth,$('email').value,$('pass').value);await updateProfile(c.user,{displayName:name})}
   catch(e){pendingName='';msg(fbErr(e))}
 };
-$('out').onclick=()=>signOut(auth);
 $('google').onclick=async()=>{
   try{msg('');await signInWithPopup(auth,new GoogleAuthProvider())}
   catch(e){if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request')msg(fbErr(e))}
@@ -195,374 +112,45 @@ $('forgot').onclick=async()=>{
   catch(e){msg(fbErr(e))}
 };
 
-/* ---------- profil & avatar ---------- */
-const AVATARS=[['♞','#c9974a'],['♛','#7fa072'],['♜','#5c84b0'],['♝','#b6584a'],['♚','#9c72b0'],['♟','#3fa79c']];
-const avEl=(i,dev)=>{
-  const e=document.createElement('span');
-  if(dev){e.style.setProperty('--av','linear-gradient(155deg,#e8c869,#a9791f)');e.textContent='🏵️';return e}
-  const[p,c]=AVATARS[i]||AVATARS[0];e.style.setProperty('--av',c);e.textContent=p;return e;
-};
-function setAvatarBtn(){
-  ['avbtn','pf-av'].forEach(id=>{const b=$(id);b.innerHTML='';b.appendChild(avEl(me.avatar,me.dev))});
+function showTab(name){
+  document.querySelectorAll('.tab[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
+  document.querySelectorAll('.tabpane').forEach(p=>p.hidden=p.id!=='tab-'+name);
 }
-$('avbtn').onclick=()=>openProfile();
-$('pf-back').onclick=goHome;
-async function openProfile(){
-  show('profile');msg('');
-  $('pf-name').textContent=me.name+(me.dev?' [DEV]':'');$('pf-name-in').value=me.name;
-  $('pf-since').textContent=new Date(me.fbUser.metadata.creationTime).toLocaleDateString('fr-FR',{year:'numeric',month:'long'});
-  const isGoogleOnly=me.fbUser.providerData.every(p=>p.providerId!=='password');
-  $('pf-pwd-card').hidden=isGoogleOnly;
-  const doc0=await getDoc(doc(db,'users',me.id)),d=doc0.data();
-  $('pf-bio-in').value=d.bio||'';
-  const played=d.played||0,wins=d.wins||0,losses=d.losses||0,draws=d.draws||0;
-  $('pf-stats').innerHTML='';
-  [['Victoires',wins],['Défaites',losses],['Nulles',draws],['Parties',played],
-   ['Taux de victoire',played?Math.round(wins/played*100)+'%':'—']]
-    .forEach(([label,val])=>{
-      const s=document.createElement('div');s.className='stat';
-      s.innerHTML=`<b></b><span>${esc(label)}</span>`;s.querySelector('b').textContent=val;
-      $('pf-stats').appendChild(s);
-    });
-  const pk=$('pf-avpick');pk.innerHTML='';
-  if(me.dev){pk.innerHTML='<p class="small">Icône fixée automatiquement pour les comptes développeur.</p>';return}
-  AVATARS.forEach((_,i)=>{
-    const b=document.createElement('button');b.className='avatar'+(i===me.avatar?' on':'');b.appendChild(avEl(i));
-    b.onclick=async()=>{
-      me.avatar=i;setAvatarBtn();pk.querySelectorAll('.avatar').forEach((e,j)=>e.classList.toggle('on',j===i));
-      try{await updateDoc(doc(db,'users',me.id),{avatar:i})}catch(e){msg('Erreur : '+e.message)}
-    };
-    pk.appendChild(b);
-  });
-}
-$('pf-bio-save').onclick=async()=>{
-  const bio=$('pf-bio-in').value.trim();
-  try{await updateDoc(doc(db,'users',me.id),{bio});me.bio=bio;msg('Description enregistrée.')}
-  catch(e){msg('Erreur : '+e.message)}
-};
-$('pf-name-save').onclick=async()=>{
-  const name=$('pf-name-in').value.trim();if(!name)return msg('Choisis un pseudo.');
-  try{
-    await updateProfile(me.fbUser,{displayName:name});
-    await updateDoc(doc(db,'users',me.id),{name});
-    me.name=name;$('pf-name').textContent=name+(me.dev?' [DEV]':'');$('whoname').textContent=name+(me.dev?' 🏵️':'');msg('Pseudo mis à jour.');
-  }catch(e){msg('Erreur : '+e.message)}
-};
-$('pf-pwd-save').onclick=async()=>{
-  const oldp=$('pf-pwd-old').value,newp=$('pf-pwd-new').value;
-  if(newp.length<6)return msg('Le nouveau mot de passe doit faire 6 caractères ou plus.');
-  try{
-    await reauthenticateWithCredential(me.fbUser,EmailAuthProvider.credential(me.fbUser.email,oldp));
-    await updatePassword(me.fbUser,newp);
-    $('pf-pwd-old').value='';$('pf-pwd-new').value='';msg('Mot de passe changé.');
-  }catch(e){msg(fbErr(e))}
-};
+document.querySelectorAll('.tab[data-tab]').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 
-$('pf-pwd-forgot').onclick=async()=>{
-  try{await sendPasswordResetEmail(auth,me.fbUser.email);msg('Email envoyé à '+me.fbUser.email+'.')}
-  catch(e){msg(fbErr(e))}
-};
-
-let presenceTimer=null;
-function startPresence(){
-  const beat=()=>updateDoc(doc(db,'users',me.id),{lastSeen:Date.now()}).catch(()=>{});
-  beat();presenceTimer=setInterval(beat,25000);
-}
-function stopPresence(){if(presenceTimer){clearInterval(presenceTimer);presenceTimer=null}}
-
-/* ---------- accueil / défis ---------- */
-const tcName=g=>g.tc_base>=3600?'1 heure':g.tc_base===60?'Bullet 1 min':g.tc_base===180?'Blitz 3+2':(g.tc_base/60)+' minutes';
 function addRow(box,html,label,fn){
   const d=document.createElement('div');d.innerHTML=`<span>${html}</span>`;
   const b=document.createElement('button');b.textContent=label;b.onclick=fn;d.appendChild(b);box.appendChild(d);
-}
-function showTab(name){
-  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
-  document.querySelectorAll('.tabpane').forEach(p=>p.hidden=p.id!=='tab-'+name);
-}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-
-function goHome(){
-  G=null;location.hash='';show('home');showTab('play');
-  if(unsubG){unsubG();unsubG=null}
-  if(unsubL)unsubL();
-  unsubL=onSnapshot(query(collection(db,'games'),where('status','in',['open','active'])),
-    s=>lobby(s.docs.map(d=>({id:d.id,...d.data()}))),e=>msg('Erreur : '+e.message));
-  loadFriends();loadRank();
 }
 function lobby(all){
   const o=$('open'),m=$('mine'),lv=$('live');o.innerHTML='';m.innerHTML='';lv.innerHTML='';
   all.filter(g=>g.status==='open'&&(!g.invited||g.invited===me.id||g.players.includes(me.id)))
     .sort((a,b)=>b.created-a.created).forEach(g=>addRow(o,
       `${esc(g.white_name||g.black_name)} · ${tcName(g)}${g.mode==='hq'?' · dame cachée':''}${g.invited?' · défi privé':''}`,
-      g.players.includes(me.id)?'Ouvrir':'Accepter',()=>openGame(g.id)));
+      g.players.includes(me.id)?'Ouvrir':'Accepter',()=>location.href='game.html?id='+g.id));
   all.filter(g=>g.status==='active').sort((a,b)=>b.created-a.created).forEach(g=>{
     const mine=g.players.includes(me.id);
     addRow(mine?m:lv,`${esc(g.white_name)} contre ${esc(g.black_name)} · ${tcName(g)}${g.mode==='hq'?' · dame cachée':''}`,
-      mine?'Reprendre':'Regarder',()=>openGame(g.id));
+      mine?'Reprendre':'Regarder',()=>location.href='game.html?id='+g.id);
   });
   if(!o.children.length)o.textContent='Aucun défi pour le moment.';
   if(!m.children.length)m.textContent='Aucune partie en cours.';
   if(!lv.children.length)lv.textContent='Personne ne joue en ce moment.';
 }
+$('bot').onclick=()=>{location.href=`game.html?bot=1&lvl=${$('lvl').value}&col=${$('col').value}`};
 $('chal').onclick=()=>challenge();
 async function challenge(inv){
   const [base,inc]=$('tc').value.split(',').map(Number),w=Math.random()<.5;
-  const g={fen:new Chess().fen(),tc_base:base,tc_inc:inc,white_ms:base*1000,black_ms:base*1000,last_at:0,status:'open',
+  const g={fen:'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',tc_base:base,tc_inc:inc,white_ms:base*1000,black_ms:base*1000,last_at:0,status:'open',
     mode:$('mode').value,moves:'',invited:inv||null,created:Date.now(),players:[me.id],
     white:w?me.id:null,black:w?null:me.id,white_name:w?me.name:'',black_name:w?'':me.name,
     white_dev:w?me.dev:false,black_dev:w?false:me.dev,
     winner:null,result:'',hq_w:'',hq_b:'',rev_w:false,rev_b:false};
-  try{const r=await addDoc(collection(db,'games'),g);openGame(r.id)}
+  try{const r=await addDoc(collection(db,'games'),g);location.href='game.html?id='+r.id}
   catch(e){msg('Impossible de créer le défi : '+e.message)}
 }
 
-/* ---------- partie en ligne ---------- */
-async function openGame(id){
-  msg('');
-  const ref=doc(db,'games',id);
-  try{
-    await runTransaction(db,async t=>{
-      const s=await t.get(ref);if(!s.exists())throw new Error('Partie introuvable.');
-      const g=s.data();
-      if(g.status==='open'&&!g.players.includes(me.id)){
-        const p={status:'active',last_at:Date.now(),players:arrayUnion(me.id)};
-        if(!g.white){p.white=me.id;p.white_name=me.name;p.white_dev=me.dev}else{p.black=me.id;p.black_name=me.name;p.black_dev=me.dev}
-        t.update(ref,p);
-      }
-    });
-  }catch(e){msg(e.message);return goHome()}
-  location.hash='g='+id;resetAna();
-  if(unsubL){unsubL();unsubL=null}
-  if(unsubG)unsubG();
-  unsubG=onSnapshot(ref,s=>{if(s.exists())startOnline({id:s.id,...s.data()})},e=>msg(e.message));
-}
-// Position réelle : en mode dame cachée, on ajoute les deux dames avant le 1er coup
-function trueBoard(r){
-  const c=new Chess(r.fen);
-  if(r.mode==='hq'&&r.hq_w&&r.hq_b&&!r.moves){c.put({type:'q',color:'w'},r.hq_w);c.put({type:'q',color:'b'},r.hq_b)}
-  return c;
-}
-function startOnline(row){
-  const wasNew=!G||G.row.id!==row.id;
-  G={mode:'online',row,c:trueBoard(row),side:row.white===me.id?'w':row.black===me.id?'b':null,announced:false,oppBio:G&&G.row.id===row.id?G.oppBio:''};
-  sel=null;show('game');render();
-  if(wasNew){
-    const oppId=G.side==='w'?row.black:G.side==='b'?row.white:(row.white===me.id?row.black:row.white);
-    if(oppId)getDoc(doc(db,'users',oppId)).then(s=>{if(s.exists()&&G&&G.row.id===row.id){G.oppBio=s.data().bio||'';render()}}).catch(()=>{});
-  }
-}
-
-/* ---------- bots ---------- */
-const V={p:100,n:320,b:330,r:500,q:900,k:0};
-function ev(c){let s=0;for(const r of c.board())for(const p of r)if(p)s+=(p.color==='w'?1:-1)*V[p.type];return s}
-function ab(c,d,a,b){
-  if(d===0)return ev(c);
-  const ms=c.moves();
-  if(!ms.length)return c.in_checkmate()?(c.turn()==='w'?-1e5-d:1e5+d):0;
-  ms.sort((x,y)=>y.includes('x')-x.includes('x'));
-  let v;
-  if(c.turn()==='w'){v=-1e9;for(const m of ms){c.move(m);v=Math.max(v,ab(c,d-1,a,b));c.undo();a=Math.max(a,v);if(a>=b)break}}
-  else{v=1e9;for(const m of ms){c.move(m);v=Math.min(v,ab(c,d-1,a,b));c.undo();b=Math.min(b,v);if(a>=b)break}}
-  return v;
-}
-function botMove(c,lvl){
-  const ms=c.moves().sort(()=>Math.random()-.5);
-  if(lvl===1||(lvl===2&&Math.random()<.3))return ms[0];
-  const w=c.turn()==='w';let best=null,bv=w?-1e9:1e9;
-  for(const m of ms){c.move(m);const v=ab(c,lvl-1,-1e9,1e9);c.undo();if(w?v>bv:v<bv){bv=v;best=m}}
-  return best;
-}
-$('bot').onclick=()=>{
-  let s=$('col').value;if(s==='r')s=Math.random()<.5?'w':'b';
-  G={mode:'bot',c:new Chess(),side:s,lvl:+$('lvl').value,over:'',sans:[],announced:false};
-  sel=null;resetAna();show('game');render();botTurn();
-};
-function botTurn(){
-  if(G.mode!=='bot'||G.over||G.c.game_over()||G.c.turn()===G.side)return;
-  $('info').textContent='Le bot réfléchit…';
-  setTimeout(()=>{if(G&&G.mode==='bot'&&!G.over){G.sans.push(G.c.move(botMove(G.c,G.lvl)).san);render()}},80);
-}
-
-/* ---------- affichage ---------- */
-const fmt=ms=>{ms=Math.max(0,ms);const s=Math.ceil(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
-const hqOn=()=>G.mode==='online'&&G.row.mode==='hq';
-const hqReady=()=>!hqOn()||!!(G.row.hq_w&&G.row.hq_b);
-function result(){
-  if(G.mode==='bot'){
-    if(G.over)return G.over;
-    if(G.c.in_checkmate())return 'Échec et mat : '+(G.c.turn()==='w'?'les noirs':'les blancs')+' gagnent.';
-    if(G.c.game_over())return 'Partie nulle.';
-    return '';
-  }
-  return G.row.status==='finished'?G.row.result:'';
-}
-function clocks(){
-  if(G.mode!=='online')return;
-  const r=G.row,now=Date.now(),act=r.status==='active'&&hqReady();
-  const t=col=>r[(col==='w'?'white':'black')+'_ms']-(act&&G.c.turn()===col&&r.last_at?now-r.last_at:0);
-  const my=G.side||'w',op=my==='w'?'b':'w';
-  $('myc').textContent=fmt(t(my));$('oppc').textContent=fmt(t(op));
-  $('myc').className=act&&G.c.turn()===my?'on':'';$('oppc').className=act&&G.c.turn()===op?'on':'';
-  for(const col of ['w','b'])if(act&&t(col)<=0&&G.side&&!G.flag){
-    G.flag=1;
-    save(r.id,{status:'finished',winner:col==='w'?r.black:r.white,result:'Temps écoulé : les '+(col==='w'?'noirs':'blancs')+' gagnent.'}).catch(()=>{});
-  }
-}
-setInterval(()=>{if(G&&G.mode==='online')clocks()},250);
-
-function computeLastMove(){
-  try{
-    if(G.mode==='bot'){
-      if(!G.sans.length)return null;
-      const c=new Chess();for(let i=0;i<G.sans.length-1;i++)c.move(G.sans[i]);
-      return c.move(G.sans[G.sans.length-1]);
-    }
-    const arr=(G.row.moves||'').split(' ').filter(Boolean);if(!arr.length)return null;
-    const c=new Chess();for(let i=0;i<arr.length-1;i++)c.move(arr[i]);
-    return c.move(arr[arr.length-1]);
-  }catch(e){return null}
-}
-function kingInCheck(c){
-  if(!c.in_check())return null;
-  const bd=c.board(),turn=c.turn();
-  for(let y=0;y<8;y++)for(let x=0;x<8;x++){const p=bd[y][x];if(p&&p.type==='k'&&p.color===turn)return 'abcdefgh'[x]+(8-y)}
-  return null;
-}
-function showBigEnd(text){
-  const el=$('bigend');el.innerHTML='';
-  const msgEl=document.createElement('div');msgEl.className='msg';msgEl.textContent=text;el.appendChild(msgEl);
-  const em=['♛','♚','★','✨','♞'];
-  for(let i=0;i<22;i++){
-    const c=document.createElement('span');c.className='confetti';c.textContent=em[i%em.length];
-    c.style.left=Math.random()*100+'%';
-    c.style.animationDuration=(1.8+Math.random()*1.4)+'s';
-    c.style.animationDelay=(Math.random()*.5)+'s';
-    el.appendChild(c);
-  }
-  el.classList.add('show');
-  el.onclick=()=>el.classList.remove('show');
-  setTimeout(()=>el.classList.remove('show'),4200);
-}
-function render(){
-  if(!G)return;
-  const r=G.row,res=result(),flip=G.side==='b',hq=hqOn(),ready=hqReady();
-  const picked=hq&&G.side?r['hq_'+G.side]:'x';
-  if(G.mode==='bot'){
-    $('oppn').textContent='Bot ('+['','Débutant','Facile','Moyen','Fort'][G.lvl]+')';$('myn').textContent=me.name+(me.dev?' [DEV]':'');
-    $('myc').textContent=$('oppc').textContent='';$('link').textContent='';$('oppbio').textContent='';
-  }else{
-    const my=G.side||'w';
-    $('myn').textContent=((my==='w'?r.white_name:r.black_name)||'…')+((my==='w'?r.white_dev:r.black_dev)?' [DEV]':'');
-    $('oppn').textContent=((my==='w'?r.black_name:r.white_name)||'En attente d\'un adversaire…')+((my==='w'?r.black_dev:r.white_dev)?' [DEV]':'');
-    $('link').textContent=r.status==='open'?'Lien à envoyer : '+location.href:'';
-    $('oppbio').textContent=G.oppBio||'';
-    clocks();
-  }
-  const canPlay=!!G.side&&!res&&G.rv==null&&G.c.turn()===G.side&&(G.mode==='bot'||(r.status==='active'&&ready));
-  let info=res||(G.mode==='online'&&r.status==='open'?'En attente d\'un adversaire…':(canPlay?'À toi de jouer'+(G.c.in_check()?' (échec !)':''):'Tour de l\'adversaire'));
-  if(!res&&hq&&r.status==='active'){
-    if(G.side&&!picked)info='Dame cachée : clique sur un de tes pions pour en faire ta dame secrète.';
-    else if(!ready)info='En attente du choix de l\'adversaire…';
-  }
-  $('info').textContent=info;
-  $('resign').hidden=!!res||!G.side;
-  $('analyse').hidden=!res||hq||!sansOf().length;
-  if(res&&!G.announced){G.announced=true;showBigEnd(res)}
-  const b=$('board'),viewC=G.rv!=null?new Chess(G.fens[G.rv]):G.c,bd=viewC.board(),
-    tg=sel&&!hq?G.c.moves({square:sel,verbose:true}).map(m=>m.to):[],
-    lm=G.rv==null?computeLastMove():null,chk=kingInCheck(viewC);
-  b.querySelectorAll('.sq').forEach(e=>e.remove());
-  for(let i=0;i<8;i++)for(let j=0;j<8;j++){
-    const y=flip?7-i:i,x=flip?7-j:j,n='abcdefgh'[x]+(8-y),d=document.createElement('div');
-    let p=bd[y][x],mark=false;
-    if(hq&&p&&!res&&r['hq_'+p.color]===n&&!r['rev_'+p.color]){   // dame encore cachée
-      mark=G.side===p.color;p={type:'p',color:p.color};          // tout le monde voit un pion
-    }
-    d.className='sq '+((x+y)%2?'d':'l')+(n===sel?' sel':'')+(tg.includes(n)?' t':'')+(mark?' hq':'')
-      +(lm&&n===lm.from?' from':'')+(lm&&n===lm.to?' to':'')+(chk&&n===chk?' check':'');
-    if(p){const s=document.createElement('span');s.className=p.color;s.textContent=PC[p.type]+'\uFE0E';d.appendChild(s)}
-    d.onclick=()=>click(n,canPlay);
-    b.appendChild(d);
-  }
-}
-function click(n,canPlay){
-  if(hqOn()&&G.side&&G.row.status==='active'&&!G.row['hq_'+G.side]&&!result()){pickHQ(n);return}
-  if(!canPlay)return;
-  const ms=sel?G.c.moves({square:sel,verbose:true}).filter(m=>m.to===n):[];
-  if(ms.length){if(ms[0].promotion)askPromo(sel,n);else play(sel,n);return}
-  const p=G.c.get(n);
-  msg(sel&&hqOn()&&!(p&&p.color===G.side)?'Coup impossible.':'');
-  sel=p&&p.color===G.side?n:null;render();
-}
-function askPromo(from,to){
-  const pr=$('promo');pr.innerHTML='';pr.style.display='flex';
-  for(const t of ['q','r','b','n']){
-    const bt=document.createElement('button');bt.textContent=PC[t]+'\uFE0E';
-    bt.onclick=()=>{pr.style.display='none';play(from,to,t)};pr.appendChild(bt);
-  }
-}
-async function pickHQ(n){
-  const p=G.c.get(n);if(!p||p.type!=='p'||p.color!==G.side)return;
-  const ref=doc(db,'games',G.row.id),mine='hq_'+G.side,other='hq_'+(G.side==='w'?'b':'w');
-  try{
-    await runTransaction(db,async t=>{
-      const g=(await t.get(ref)).data(),u={[mine]:n};
-      if(g[other])u.last_at=Date.now();   // les horloges démarrent quand les deux ont choisi
-      t.update(ref,u);
-    });
-  }catch(e){msg('Choix non enregistré : '+e.message)}
-}
-// Un pion peut : avancer de 1 (ou 2 depuis sa case de départ), ou prendre en diagonale d'une case.
-function pawnLike(m,col){
-  const dx=Math.abs(m.to.charCodeAt(0)-m.from.charCodeAt(0)),dy=(m.to[1]-m.from[1])*(col==='w'?1:-1);
-  if(m.to[1]===(col==='w'?'8':'1'))return false;
-  if(dx===0)return !m.captured&&(dy===1||(dy===2&&m.from[1]===(col==='w'?'2':'7')));
-  return dx===1&&dy===1&&!!m.captured;
-}
-async function play(from,to,promo){
-  const mv=G.c.move({from,to,promotion:promo||'q'});sel=null;
-  if(G.mode==='bot'){G.sans.push(mv.san);render();botTurn();return}
-  const r=G.row,now=Date.now(),col=G.side,k=col==='w'?'white_ms':'black_ms';
-  const patch={fen:G.c.fen(),last_at:now,moves:((r.moves||'')+' '+mv.san).trim()};
-  patch[k]=r[k]-(now-r.last_at)+r.tc_inc*1000;
-  if(r.mode==='hq'){
-    const o=col==='w'?'b':'w';
-    if(r['hq_'+col]===from){
-      patch['hq_'+col]=to;
-      if(!r['rev_'+col]&&!pawnLike(mv,col))patch['rev_'+col]=true;   // mouvement impossible pour un pion : elle se révèle
-    }
-    if(mv.captured&&r['hq_'+o]===to)patch['hq_'+o]='x';              // dame cachée adverse capturée
-  }
-  if(G.c.in_checkmate()){patch.status='finished';patch.winner=me.id;patch.result='Échec et mat : les '+(col==='w'?'blancs':'noirs')+' gagnent.'}
-  else if(G.c.game_over()){patch.status='finished';patch.result='Partie nulle.'}
-  Object.assign(G.row,patch);render();
-  try{await save(r.id,patch)}catch(e){msg('Coup non enregistré : '+e.message)}
-}
-// Enregistre un coup ; si la partie se termine, met à jour les scores des deux joueurs dans la même opération
-async function save(id,patch){
-  const ref=doc(db,'games',id);
-  if(patch.status!=='finished'){await updateDoc(ref,patch);return}
-  const r=G.row,b=writeBatch(db);
-  b.update(ref,patch);
-  for(const u of [r.white,r.black]){
-    const inc={played:increment(1)};
-    if(patch.winner)inc[patch.winner===u?'wins':'losses']=increment(1);
-    else inc.draws=increment(1);
-    b.update(doc(db,'users',u),inc);
-  }
-  await b.commit();
-}
-$('resign').onclick=async()=>{
-  if(!confirm('Abandonner la partie ?'))return;
-  if(G.mode==='bot'){G.over='Tu as abandonné.';render();return}
-  const w=G.side==='w'?'noirs':'blancs';
-  try{await save(G.row.id,{status:'finished',winner:G.side==='w'?G.row.black:G.row.white,result:'Abandon : les '+w+' gagnent.'})}
-  catch(e){msg('Erreur : '+e.message)}
-};
-$('back').onclick=goHome;
-
-/* ---------- amis & classement ---------- */
+/* ---------- amis ---------- */
 async function loadFriends(){
   $('mycode').textContent=me.code;
   const fr=$('friends');fr.innerHTML='Chargement…';
@@ -573,29 +161,11 @@ async function loadFriends(){
     const ds=await getDoc(doc(db,'users',fd.id));if(!ds.exists())continue;
     const q=ds.data(),online=q.lastSeen&&(Date.now()-q.lastSeen<120000);
     const row=document.createElement('div');row.className='friend-row';
-    const av=document.createElement('button');av.className='avatar';av.appendChild(avEl(q.avatar||0,q.dev));
-    av.onclick=()=>{};
+    const av=document.createElement('button');av.className='avatar';av.appendChild(avEl(q.avatar||0,q.dev));av.onclick=()=>{};
     const info=document.createElement('div');info.className='info';
     info.innerHTML=`<div><b>${esc(q.name)}</b>${q.dev?' 🏵️':''}<span class="dot${online?' on':''}" title="${online?'En ligne':'Hors ligne'}"></span></div><div class="small">${esc(q.bio||'')}</div>`;
     const btn=document.createElement('button');btn.textContent='Défier';btn.onclick=()=>challenge(fd.id);
     row.append(av,info,btn);fr.appendChild(row);
-  }
-}
-async function loadRank(){
-  const rk=$('rank');rk.innerHTML='';$('myrank').textContent='';
-  const r=await getDocs(query(collection(db,'users'),orderBy('wins','desc'),limit(10)));
-  let i=0,found=false;
-  r.forEach(d=>{
-    const q=d.data();if(!q.played)return;i++;if(d.id===me.id)found=true;
-    const medal=i<=3?['🥇','🥈','🥉'][i-1]:i+'.';
-    const row=document.createElement('div');row.className='rank-row'+(d.id===me.id?' me':'');
-    row.innerHTML=`<span>${medal} ${esc(q.name)}${q.dev?' 🏵️':''}</span><span>${q.wins} victoire(s) / ${q.played}</span>`;
-    rk.appendChild(row);
-  });
-  if(!i){rk.textContent='Aucune partie terminée pour le moment.';return}
-  if(!found){
-    const my=(await getDoc(doc(db,'users',me.id))).data();
-    $('myrank').textContent=my.played?`Toi : ${my.wins} victoire(s) sur ${my.played} partie(s), hors du top 10.`:'Joue une partie pour apparaître ici !';
   }
 }
 $('fadd').onclick=async()=>{
@@ -610,124 +180,39 @@ $('fadd').onclick=async()=>{
   }catch(e){msg('Erreur : '+e.message)}
 };
 
-/* ---------- administration (comptes développeur) ---------- */
-$('adm-search').onclick=async()=>{
-  const code=$('adm-code').value.trim(),res=$('adm-result');
-  if(!code)return;
-  res.innerHTML='<p class="small">Recherche…</p>';
+/* ---------- classement (universel / mensuel / hebdomadaire) ---------- */
+let period='all';
+document.querySelectorAll('.subtab').forEach(b=>b.onclick=()=>{period=b.dataset.period;document.querySelectorAll('.subtab').forEach(x=>x.classList.toggle('on',x===b));loadRank()});
+async function loadRank(){
+  const rk=$('rank');rk.innerHTML='';$('myrank').textContent='';
+  const cfg={all:['wins','played'],month:['monthWins','monthPlayed'],week:['weekWins','weekPlayed']}[period];
+  let docs;
   try{
-    const c=await getDoc(doc(db,'codes',code));
-    if(!c.exists()){res.innerHTML='<p class="small">Code inconnu.</p>';return}
-    const uid=c.data().uid,ds=await getDoc(doc(db,'users',uid));
-    if(!ds.exists()){res.innerHTML='<p class="small">Profil introuvable.</p>';return}
-    renderAdmin(uid,ds.data());
-  }catch(e){res.innerHTML='<p class="small">Erreur : '+esc(e.message)+'</p>'}
-};
-function renderAdmin(uid,d){
-  const res=$('adm-result');res.innerHTML='';
-  const card=document.createElement('div');card.className='card adm-card';
-  card.innerHTML=`<h2>${esc(d.name)}${d.dev?' 🏵️':''}${d.banned?' · <span style="color:var(--bad)">compte banni</span>':''}</h2>
-    <div class="row">
-      <label>Victoires<input id="adm-w" type="number" value="${d.wins||0}" style="width:76px"></label>
-      <label>Défaites<input id="adm-l" type="number" value="${d.losses||0}" style="width:76px"></label>
-      <label>Nulles<input id="adm-dr" type="number" value="${d.draws||0}" style="width:76px"></label>
-      <label>Parties<input id="adm-p" type="number" value="${d.played||0}" style="width:76px"></label>
-    </div>
-    <div class="row"><button id="adm-save">Enregistrer les statistiques</button></div>
-    <div class="row"><button class="${d.banned?'sec':'danger'}" id="adm-ban">${d.banned?'Débannir':'Bannir'}</button></div>
-    <div class="row"><button class="sec" id="adm-reset"${d.email?'':' disabled'}>Envoyer un lien de réinitialisation du mot de passe</button></div>
-    <p class="small">Changer directement le mot de passe d'un autre compte n'est pas possible sans serveur dédié ; le lien ci-dessus est l'équivalent le plus proche.</p>`;
-  res.appendChild(card);
-  $('adm-save').onclick=async()=>{
-    try{
-      await updateDoc(doc(db,'users',uid),{wins:+$('adm-w').value,losses:+$('adm-l').value,draws:+$('adm-dr').value,played:+$('adm-p').value});
-      msg('Statistiques mises à jour.');
-    }catch(e){msg('Erreur : '+e.message)}
-  };
-  $('adm-ban').onclick=async()=>{
-    try{await updateDoc(doc(db,'users',uid),{banned:!d.banned});d.banned=!d.banned;renderAdmin(uid,d)}
-    catch(e){msg('Erreur : '+e.message)}
-  };
-  $('adm-reset').onclick=async()=>{
-    if(!d.email)return;
-    try{await sendPasswordResetEmail(auth,d.email);msg('Email envoyé à '+d.email+'.')}
-    catch(e){msg('Erreur : '+e.message)}
-  };
-}
-
-/* ---------- analyse de partie (Stockfish) ---------- */
-const resetAna=()=>{$('ana').innerHTML=''};
-const sansOf=()=>G.mode==='bot'?G.sans:(G.row.moves||'').split(' ').filter(Boolean);
-const BADGE={brilliant:['Brillant','!!','#1baca6'],best:['Meilleur coup','★','#81b64c'],great:['Très bon coup','!','#5c8bb0'],good:['Bon coup','✓','#8d9b7e'],miss:['Coup raté','?','#e58f2a'],blunder:['Gaffe','??','#ca3431']};
-let sf=null;
-async function engine(){
-  if(sf)return sf;
-  sf=new Worker('stockfish.js');
-  sf.postMessage('uci');return sf;
-}
-function evalPos(fen,depth){
-  return new Promise(res=>{
-    let cp=0;
-    sf.onmessage=e=>{
-      const l=typeof e.data==='string'?e.data:'';
-      const m=l.match(/^info depth.* score (cp|mate) (-?\d+)/);
-      if(m){const v=+m[2];cp=m[1]==='cp'?v:(v>0?10000-v:-10000-v)}
-      if(l.startsWith('bestmove'))res({cp,best:l.split(' ')[1]});
-    };
-    sf.postMessage('position fen '+fen);sf.postMessage('go depth '+depth);
+    let qy=collection(db,'users');
+    if(period!=='all')qy=query(qy,where(period==='month'?'monthKey':'weekKey','==',period==='month'?monthKey():weekKey()),orderBy(cfg[0],'desc'),limit(10));
+    else qy=query(qy,orderBy(cfg[0],'desc'),limit(10));
+    docs=(await getDocs(qy)).docs;
+  }catch(e){rk.innerHTML=`<p class="small">Classement momentanément indisponible${e.message.includes('index')?' (index Firestore en cours de création — réessaie dans une minute, ou clique le lien fourni dans la console développeur du navigateur)':''}.</p>`;return}
+  let i=0,found=false;
+  docs.forEach(d=>{
+    const q=d.data();if(!q[cfg[1]])return;i++;if(d.id===me.id)found=true;
+    const medal=i<=3?['🥇','🥈','🥉'][i-1]:i+'.';
+    const row=document.createElement('div');row.className='rank-row'+(d.id===me.id?' me':'');
+    row.innerHTML=`<span>${medal} ${esc(q.name)}${q.dev?' 🏵️':''}</span><span>${q[cfg[0]]} victoire(s) / ${q[cfg[1]]}</span>`;
+    rk.appendChild(row);
   });
-}
-const wp=cp=>1/(1+Math.pow(10,-cp/400));
-$('analyse').onclick=async()=>{
-  const a=$('ana'),sans=sansOf();
-  $('analyse').hidden=true;a.textContent='Chargement du moteur…';
-  try{await engine()}catch(e){a.textContent='Moteur d\'analyse indisponible (réseau).';return}
-  const c=new Chess(),fens=[c.fen()],mv=[];
-  for(const s of sans){mv.push(c.move(s));fens.push(c.fen())}
-  const ev=[];
-  for(let i=0;i<fens.length;i++){
-    a.textContent='Analyse '+(i+1)+'/'+fens.length+'…';
-    const cc=new Chess(fens[i]);
-    const r=cc.game_over()?{cp:cc.in_checkmate()?-10000:0,best:''}:await evalPos(fens[i],10);
-    ev.push({cp:cc.turn()==='w'?r.cp:-r.cp,best:r.best});   // évaluation du point de vue des blancs
+  if(!i){rk.textContent='Aucune partie sur cette période.';return}
+  if(!found){
+    const my=(await getDoc(doc(db,'users',me.id))).data();
+    $('myrank').textContent=my[cfg[1]]?`Toi : ${my[cfg[0]]} victoire(s) sur ${my[cfg[1]]} partie(s), hors du top 10.`:'Joue une partie pour apparaître ici !';
   }
-  const ks=[],bs=[];
-  mv.forEach((m,i)=>{
-    const pov=m.color==='w'?1:-1,w0=wp(pov*ev[i].cp),w1=wp(pov*ev[i+1].cp),loss=Math.max(0,w0-w1);
-    const uci=m.from+m.to+(m.promotion||'');
-    let k;
-    const after=new Chess(fens[i+1]);
-    const sac=V[m.piece]>=300&&V[m.piece]>(m.captured?V[m.captured]:0)&&after.moves({verbose:true}).some(x=>x.to===m.to&&x.captured);
-    if(sac&&loss<=.03&&w1>=.45&&w0<.85)k='brilliant';
-    else if(uci===ev[i].best||loss<=.005)k='best';
-    else if(loss<=.02)k='great';
-    else if(loss<=.06)k='good';
-    else if(loss<=.2)k='miss';
-    else k='blunder';
-    ks.push(k);
-    try{const b=ev[i].best,t=new Chess(fens[i]);bs.push(b&&b!=='(none)'?t.move({from:b.slice(0,2),to:b.slice(2,4),promotion:b[4]}).san:'')}catch(e){bs.push('')}
-  });
-  G.fens=fens;G.rv=null;
-  a.innerHTML='';
-  ['w','b'].forEach(s=>{
-    const cnt={};ks.forEach((k,i)=>{if(i%2===(s==='w'?0:1))cnt[k]=(cnt[k]||0)+1});
-    const p=document.createElement('div');p.className='small';
-    p.textContent=(s==='w'?'Blancs : ':'Noirs : ')+(Object.keys(BADGE).filter(k=>cnt[k]).map(k=>cnt[k]+' '+BADGE[k][0].toLowerCase()).join(', ')||'—');
-    a.appendChild(p);
-  });
-  const note=document.createElement('div');note.className='small';note.textContent='Clique sur un coup pour revoir la position.';
-  const list=document.createElement('div');list.className='mvs';
-  sans.forEach((s,i)=>{
-    if(i%2===0){const n=document.createElement('span');n.className='small';n.textContent=(i/2+1)+'.';list.appendChild(n)}
-    const B=BADGE[ks[i]],b=document.createElement('button');b.className='mv';
-    b.innerHTML=`${esc(s)} <i style="background:${B[2]}">${B[1]}</i>`;
-    b.onclick=()=>{
-      G.rv=i+1===sans.length?null:i+1;sel=null;render();
-      note.textContent=B[0]+' · évaluation '+(ev[i+1].cp/100).toFixed(1)+(bs[i]&&bs[i]!==s?' · meilleur coup : '+bs[i]:'');
-    };
-    list.appendChild(b);
-  });
-  a.appendChild(list);a.appendChild(note);
-};
+}
 
+initAuthGuard({isLoginPage:true,onLoggedOut(){show('auth')},onReady(m){
+  me=m;show('home');showTab('play');
+  if(unsubL)unsubL();
+  unsubL=onSnapshot(query(collection(db,'games'),where('status','in',['open','active'])),
+    s=>lobby(s.docs.map(d=>({id:d.id,...d.data()}))),e=>msg('Erreur : '+e.message));
+  loadFriends();loadRank();
+}});
 </script></body></html>
