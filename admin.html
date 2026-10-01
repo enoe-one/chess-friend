@@ -29,20 +29,59 @@
     <div class="row"><button class="sec" id="rst-month">Réinitialiser le mois</button></div>
     <div class="row"><button class="danger" id="rst-all">Réinitialiser le classement universel</button></div>
   </div>
+
+  <div class="card"><h2>Journal des parties</h2>
+    <p class="small">Les 30 dernières parties terminées. Clique sur une ligne pour voir le détail des coups joués.</p>
+    <div class="list" id="gamelog"></div>
+  </div>
 </div>
 
+<div id="gamelog-detail"></div>
 <div id="adm-result"></div>
 <button class="sec" id="adm-back">Retour à l'accueil</button>
 </main>
 
 <script type="module">
-import {$,esc,initAuthGuard,db,auth,weekKey,monthKey} from "./common.js";
+import {$,esc,initAuthGuard,db,auth,weekKey,monthKey,frMove} from "./common.js";
 import {sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {doc,getDoc,updateDoc,collection,getDocs,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {doc,getDoc,updateDoc,collection,getDocs,writeBatch,query,where,orderBy,limit} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const msg=t=>$('msg').textContent=t||'';
 $('adm-back').onclick=()=>location.href='index.html';
 
-initAuthGuard({devOnly:true,onReady(){}});
+initAuthGuard({devOnly:true,onReady(){loadGameLog()}});
+
+async function loadGameLog(){
+  const el=$('gamelog');el.innerHTML='Chargement…';
+  try{
+    const qy=query(collection(db,'games'),where('status','==','finished'),orderBy('created','desc'),limit(30));
+    const docs=(await getDocs(qy)).docs;
+    el.innerHTML='';
+    if(!docs.length){el.textContent='Aucune partie terminée pour le moment.';return}
+    docs.forEach(d=>{
+      const g=d.data(),row=document.createElement('div');
+      const date=new Date(g.created).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      row.innerHTML=`<span>${esc(g.white_name||'?')} vs ${esc(g.black_name||'?')} · ${date}${g.unranked?' · non classée':''}</span>`;
+      const b=document.createElement('button');b.textContent='Détail';b.onclick=()=>showGameDetail(g);
+      row.appendChild(b);el.appendChild(row);
+    });
+  }catch(e){el.innerHTML=`<p class="small">Journal momentanément indisponible${e.message.includes('index')?' (index Firestore en cours de création — réessaie dans une minute, ou clique le lien fourni dans la console développeur du navigateur)':''}.</p>`}
+}
+function showGameDetail(g){
+  const el=$('gamelog-detail');el.innerHTML='';
+  const card=document.createElement('div');card.className='card';
+  const sans=(g.moves||'').split(' ').filter(Boolean);
+  card.innerHTML=`<h2>${esc(g.white_name||'?')} vs ${esc(g.black_name||'?')}</h2>
+    <p class="small">${esc(g.result||'')}${g.unranked?' · partie non classée':''}</p>`;
+  const list=document.createElement('div');list.className='movelist';list.style.maxHeight='320px';
+  if(!sans.length)list.innerHTML='<p class="small">Aucun coup enregistré.</p>';
+  sans.forEach((s,i)=>{
+    const row=document.createElement('div');row.className='mv-row';
+    row.innerHTML=`<span class="small">${i%2===0?(i/2+1)+'. Blancs':'Noirs'}</span><span>${esc(frMove(s))}</span>`;
+    list.appendChild(row);
+  });
+  card.appendChild(list);el.appendChild(card);
+  el.scrollIntoView({behavior:'smooth'});
+}
 
 $('adm-search').onclick=async()=>{
   const code=$('adm-code').value.trim(),res=$('adm-result');

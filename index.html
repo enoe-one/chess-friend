@@ -54,6 +54,11 @@
       </div>
       <div class="small">Le défi apparaît chez tous les joueurs connectés. Tu peux aussi envoyer le lien de la partie à un ami.</div>
     </div>
+    <div class="card"><h2>Défi non classé</h2>
+      <p class="small">Fais scanner ce QR code à un ami à côté de toi : vous jouerez une partie amicale qui ne compte dans aucun classement.</p>
+      <div class="row"><button class="sec" id="qrchal">Créer un défi à scanner</button></div>
+      <div id="qrchal-out"></div>
+    </div>
     <div class="card"><h2>Mes parties en cours</h2><div class="list" id="mine"></div></div>
   </div>
 
@@ -64,8 +69,10 @@
 
   <div class="tabpane" id="tab-friends" hidden>
     <div class="card"><h2>Mon code ami</h2>
-      <p class="small">Donne ce code à un ami pour qu'il t'ajoute.</p>
+      <p class="small">Donne ce code, ce lien, ou ce QR code à un ami pour qu'il t'ajoute.</p>
       <div class="row"><b id="mycode" style="font-family:var(--serif);font-size:1.4rem;letter-spacing:3px"></b></div>
+      <div class="row"><input id="mylink" readonly></div>
+      <div id="myqr"></div>
       <div class="row"><input id="fcode" maxlength="4" inputmode="numeric" placeholder="Code à 4 chiffres"><button id="fadd">Ajouter</button></div>
     </div>
     <div class="card"><h2>Mes amis</h2><div class="list" id="friends"></div></div>
@@ -86,12 +93,13 @@
 </main>
 
 <script type="module">
-import {$,esc,tcName,avEl,initAuthGuard,db,auth,weekKey,monthKey} from "./common.js";
+import {$,esc,tcName,avEl,initAuthGuard,db,auth,weekKey,monthKey,qrImg} from "./common.js";
 import {signInWithEmailAndPassword,createUserWithEmailAndPassword,updateProfile,GoogleAuthProvider,signInWithPopup,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {doc,getDoc,setDoc,addDoc,updateDoc,collection,query,where,onSnapshot,runTransaction,arrayUnion,orderBy,limit,getDocs} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const msg=t=>$('msg').textContent=t||'';
 const show=v=>{['auth','home'].forEach(x=>$(x).hidden=x!==v);const el=$(v);el.classList.remove('appear');void el.offsetWidth;el.classList.add('appear')};
 let me=null,unsubL=null,pendingName='';
+const qs=new URLSearchParams(location.search);
 
 const fbErr=e=>({'auth/invalid-credential':'Email ou mot de passe incorrect.','auth/email-already-in-use':'Cet email a déjà un compte.','auth/weak-password':'Mot de passe trop court (6 caractères minimum).','auth/invalid-email':'Email invalide.'}[e.code]||e.message);
 $('login').onclick=async()=>{try{msg('');await signInWithEmailAndPassword(auth,$('email').value,$('pass').value)}catch(e){msg(fbErr(e))}};
@@ -124,13 +132,14 @@ function addRow(box,html,label,fn){
 }
 function lobby(all){
   const o=$('open'),m=$('mine'),lv=$('live');o.innerHTML='';m.innerHTML='';lv.innerHTML='';
-  all.filter(g=>g.status==='open'&&(!g.invited||g.invited===me.id||g.players.includes(me.id)))
+  all.filter(g=>g.status==='open'&&!g.unranked&&(!g.invited||g.invited===me.id||g.players.includes(me.id)))
     .sort((a,b)=>b.created-a.created).forEach(g=>addRow(o,
       `${esc(g.white_name||g.black_name)} · ${tcName(g)}${g.mode==='hq'?' · dame cachée':''}${g.invited?' · défi privé':''}`,
       g.players.includes(me.id)?'Ouvrir':'Accepter',()=>location.href='game.html?id='+g.id));
   all.filter(g=>g.status==='active').sort((a,b)=>b.created-a.created).forEach(g=>{
     const mine=g.players.includes(me.id);
-    addRow(mine?m:lv,`${esc(g.white_name)} contre ${esc(g.black_name)} · ${tcName(g)}${g.mode==='hq'?' · dame cachée':''}`,
+    if(!mine&&g.unranked)return;   // un défi non classé ne s'affiche que chez ses deux joueurs
+    addRow(mine?m:lv,`${esc(g.white_name)} contre ${esc(g.black_name)} · ${tcName(g)}${g.mode==='hq'?' · dame cachée':''}${g.unranked?' · non classée':''}`,
       mine?'Reprendre':'Regarder',()=>location.href='game.html?id='+g.id);
   });
   if(!o.children.length)o.textContent='Aucun défi pour le moment.';
@@ -139,20 +148,33 @@ function lobby(all){
 }
 $('bot').onclick=()=>{location.href=`game.html?bot=1&lvl=${$('lvl').value}&col=${$('col').value}`};
 $('chal').onclick=()=>challenge();
-async function challenge(inv){
+async function challenge(inv,unranked){
   const [base,inc]=$('tc').value.split(',').map(Number),w=Math.random()<.5;
   const g={fen:'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',tc_base:base,tc_inc:inc,white_ms:base*1000,black_ms:base*1000,last_at:0,status:'open',
-    mode:$('mode').value,moves:'',invited:inv||null,created:Date.now(),players:[me.id],
+    mode:$('mode').value,moves:'',invited:inv||null,unranked:!!unranked,created:Date.now(),players:[me.id],
     white:w?me.id:null,black:w?null:me.id,white_name:w?me.name:'',black_name:w?'':me.name,
     white_dev:w?me.dev:false,black_dev:w?false:me.dev,
     winner:null,result:'',hq_w:'',hq_b:'',rev_w:false,rev_b:false};
-  try{const r=await addDoc(collection(db,'games'),g);location.href='game.html?id='+r.id}
+  try{const r=await addDoc(collection(db,'games'),g);if(unranked)return r.id;location.href='game.html?id='+r.id}
   catch(e){msg('Impossible de créer le défi : '+e.message)}
 }
+$('qrchal').onclick=async()=>{
+  const id=await challenge(null,true);
+  if(!id)return;
+  const url=location.origin+location.pathname.replace('index.html','')+'game.html?id='+id;
+  const out=$('qrchal-out');out.innerHTML='';
+  out.appendChild(qrImg(url,180));
+  const link=document.createElement('p');link.className='small';link.textContent=url;out.appendChild(link);
+  const go=document.createElement('button');go.textContent='Entrer dans la partie';go.onclick=()=>location.href='game.html?id='+id;
+  out.appendChild(go);
+};
 
 /* ---------- amis ---------- */
 async function loadFriends(){
   $('mycode').textContent=me.code;
+  const url=location.origin+location.pathname+'?add='+me.code;
+  $('mylink').value=url;
+  const qr=$('myqr');qr.innerHTML='';qr.appendChild(qrImg(url,150));
   const fr=$('friends');fr.innerHTML='Chargement…';
   const f=await getDocs(collection(db,'users',me.id,'friends'));
   if(!f.docs.length){fr.textContent='Ajoute un ami avec son code à 4 chiffres.';return}
@@ -168,9 +190,9 @@ async function loadFriends(){
     row.append(av,info,btn);fr.appendChild(row);
   }
 }
-$('fadd').onclick=async()=>{
+async function addFriendByCode(code){
   try{
-    const c=await getDoc(doc(db,'codes',$('fcode').value.trim()));
+    const c=await getDoc(doc(db,'codes',code));
     if(!c.exists())return msg('Code inconnu.');
     const fid=c.data().uid;if(fid===me.id)return msg('C\'est ton propre code.');
     const u=(await getDoc(doc(db,'users',fid))).data();
@@ -178,7 +200,8 @@ $('fadd').onclick=async()=>{
     await setDoc(doc(db,'users',fid,'friends',me.id),{name:me.name});
     msg(u.name+' est maintenant ton ami.');$('fcode').value='';loadFriends();
   }catch(e){msg('Erreur : '+e.message)}
-};
+}
+$('fadd').onclick=()=>addFriendByCode($('fcode').value.trim());
 
 /* ---------- classement (universel / mensuel / hebdomadaire) ---------- */
 let period='all';
@@ -214,5 +237,11 @@ initAuthGuard({isLoginPage:true,onLoggedOut(){show('auth')},onReady(m){
   unsubL=onSnapshot(query(collection(db,'games'),where('status','in',['open','active'])),
     s=>lobby(s.docs.map(d=>({id:d.id,...d.data()}))),e=>msg('Erreur : '+e.message));
   loadFriends();loadRank();
+  const addCode=qs.get('add');
+  if(addCode&&addCode!==me.code){
+    showTab('friends');$('fcode').value=addCode;
+    msg('Clique sur « Ajouter » pour devenir ami avec le code '+addCode+'.');
+    history.replaceState(null,'','index.html');
+  }
 }});
 </script></body></html>

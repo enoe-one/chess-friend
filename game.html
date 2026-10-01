@@ -29,6 +29,8 @@
     <div class="side-col card">
       <p id="info"></p>
       <p class="small" id="link"></p>
+      <h2 style="margin-top:10px">Coups joués</h2>
+      <div class="movelist" id="movelist"></div>
       <div id="ana"></div>
       <div class="row"><button id="analyse" hidden>Analyser la partie</button></div>
       <div class="row"><button class="sec" id="resign">Abandonner</button><button class="sec" id="back">Retour à l'accueil</button></div>
@@ -39,7 +41,7 @@
 <div id="bigend" class="bigend"></div>
 
 <script type="module">
-import {$,esc,avEl,initAuthGuard,db,auth,weekKey,monthKey,BOT_LEVELS} from "./common.js";
+import {$,esc,avEl,initAuthGuard,db,auth,weekKey,monthKey,BOT_LEVELS,frMove} from "./common.js";
 import {doc,getDoc,updateDoc,collection,onSnapshot,runTransaction,arrayUnion} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const msg=t=>$('msg').textContent=t||'';
 const PC={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
@@ -183,6 +185,18 @@ function clocks(){
 }
 setInterval(()=>{if(G&&G.mode==='online')clocks()},250);
 
+function renderMoveList(){
+  const sans=sansOf(),el=$('movelist');el.innerHTML='';
+  if(!sans.length){el.innerHTML='<p class="small">Aucun coup joué pour le moment.</p>';return}
+  sans.forEach((s,i)=>{
+    const row=document.createElement('div');row.className='mv-row'+(G.rv!=null&&i===G.rv-1?' current':'');
+    const no=i%2===0?(i/2+1)+'. ':'';
+    row.innerHTML=`<span class="small">${no}${i%2===0?'Blancs':'Noirs'}</span><span>${esc(frMove(s))}</span>`;
+    row.onclick=()=>{G.rv=i+1===sans.length?null:i+1;sel=null;render()};
+    el.appendChild(row);
+  });
+  el.scrollTop=el.scrollHeight;
+}
 function render(){
   if(!G)return;
   const r=G.row,res=result(),flip=G.side==='b',hq=hqOn(),ready=hqReady();
@@ -204,11 +218,13 @@ function render(){
     if(G.side&&!picked)info='Dame cachée : clique sur un de tes pions pour en faire ta dame secrète.';
     else if(!ready)info='En attente du choix de l\'adversaire…';
   }
-  $('info').textContent=info;
+  $('info').textContent=(G.mode==='online'&&r.unranked?'🎲 Partie non classée — ':'')+info;
   $('resign').hidden=!!res||!G.side;
   $('analyse').hidden=!res||hq||!sansOf().length;
   if(res&&!G.announced){G.announced=true;showBigEnd(res)}
-  const b=$('board'),viewC=G.rv!=null?new Chess(G.fens[G.rv]):G.c,bd=viewC.board(),
+  renderMoveList();
+  const b=$('board');b.classList.toggle('myturn',canPlay);
+  const viewC=G.rv!=null?new Chess(G.fens[G.rv]):G.c,bd=viewC.board(),
     tg=sel&&!hq?G.c.moves({square:sel,verbose:true}).map(m=>m.to):[],
     lm=G.rv==null?computeLastMove():null,chk=kingInCheck(viewC),cap=lm&&lm.captured;
   b.querySelectorAll('.sq').forEach(e=>e.remove());
@@ -276,7 +292,9 @@ async function play(from,to,promo){
 async function save(id,patch){
   const ref=doc(db,'games',id);
   if(patch.status!=='finished'){await updateDoc(ref,patch);return}
-  const r=G.row,wk=weekKey(),mk=monthKey();
+  const r=G.row;
+  if(r.unranked){await updateDoc(ref,patch);return}   // partie non classée : la partie se termine, mais rien n'est compté
+  const wk=weekKey(),mk=monthKey();
   await runTransaction(db,async t=>{
     const wref=doc(db,'users',r.white),bref=doc(db,'users',r.black);
     const [wSnap,bSnap]=await Promise.all([t.get(wref),t.get(bref)]);

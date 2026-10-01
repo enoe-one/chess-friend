@@ -1,6 +1,6 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {firebaseConfig} from "./config.js";
-import {getAuth,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getAuth,onAuthStateChanged,signOut,sendEmailVerification} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getFirestore,doc,getDoc,setDoc,updateDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 export const app=initializeApp(firebaseConfig);
@@ -32,6 +32,30 @@ export function weekKey(d=new Date()){
   return t.getUTCFullYear()+'-S'+String(wk).padStart(2,'0');
 }
 
+export function qrImg(data,size=200){
+  const img=document.createElement('img');
+  img.src=`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}`;
+  img.width=size;img.height=size;img.alt='QR code';img.style.background='#fff';img.style.borderRadius='8px';img.style.padding='6px';
+  return img;
+}
+
+const PIECE_FR={N:'Cavalier',B:'Fou',R:'Tour',Q:'Dame',K:'Roi'};
+export function frMove(san){
+  const mate=san.includes('#'),check=!mate&&san.includes('+');
+  const s=san.replace(/[+#]/,'');
+  if(s==='O-O'||s==='O-O-O')
+    return (s==='O-O'?'Petit roque':'Grand roque')+(mate?' — échec et mat !':check?' — échec':'');
+  let piece='Pion',rest=s;
+  if(/^[NBRQK]/.test(s)){piece=PIECE_FR[s[0]];rest=s.slice(1)}
+  let promo='';
+  const pm=rest.match(/=([NBRQ])$/);
+  if(pm){promo=' puis promu en '+PIECE_FR[pm[1]].toLowerCase();rest=rest.slice(0,pm.index)}
+  const capture=rest.includes('x');
+  rest=rest.replace('x','');
+  const dest=rest.slice(-2);
+  return piece+(capture?' prend en ':' en ')+dest+promo+(mate?' — échec et mat !':check?' — échec':'');
+}
+
 const profs={};
 export function ensureProfile(u,name){
   return profs[u.uid]||(profs[u.uid]=(async()=>{
@@ -51,7 +75,10 @@ export function ensureProfile(u,name){
       const p={name:nm,code,email:u.email||'',wins:0,losses:0,draws:0,played:0,
         weekKey:weekKey(),weekWins:0,weekPlayed:0,monthKey:monthKey(),monthWins:0,monthPlayed:0,
         avatar:0,dev:isDev,bio:'',deleted:false};
-      await setDoc(r,p);return p;
+      await setDoc(r,p);
+      const isPasswordAccount=u.providerData.some(pr=>pr.providerId==='password');
+      if(isPasswordAccount&&u.email)sendEmailVerification(u).catch(()=>{});   // email saisi à la main : on confirme
+      return p;
     }
     throw new Error('plus de code libre');
   })());

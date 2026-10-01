@@ -155,3 +155,17 @@ button.sec{box-shadow:0 2px 0 #ffffff10,0 2px 5px #0003}
 .card{transition:transform .18s ease,box-shadow .18s ease}
 .card:hover{transform:translateY(-3px);box-shadow:0 8px 22px #0007}
 h1{border-bottom:1px solid #ffffff14;padding-bottom:12px}
+
+/* liste des coups, en français, en direct */
+.movelist{max-height:220px;overflow-y:auto;border:1px solid #ffffff14;border-radius:8px;padding:4px 8px;margin-bottom:10px}
+.mv-row{display:flex;justify-content:space-between;gap:8px;padding:4px 2px;border-top:1px solid #ffffff0c;cursor:pointer;font-size:.9rem}
+.mv-row:first-child{border-top:0}
+.mv-row:hover{background:#ffffff08}
+.mv-row.current{background:#c9974a22;border-radius:4px}
+
+/* légère pulsation quand c'est ton tour */
+#info{transition:color .3s}
+
+/* léger halo doré autour du plateau quand c'est à toi de jouer */
+.board-col{position:relative}
+#board.myturn{box-shadow:0 4px 16px #0007,0 0 0 6px #2b2119,0 0 0 7px var(--ac)}
