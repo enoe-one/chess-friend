@@ -23,7 +23,7 @@ Un site d'échecs multijoueur en 1 contre 1, statique et open source, sans backe
 - **Échecs** : [chess.js](https://github.com/jhlywa/chess.js) pour les règles et la validation des coups.
 - **Backend** : [Firebase](https://firebase.google.com/) — Authentication (comptes) + Firestore (base de données temps réel).
 - **Moteur d'analyse** : [Stockfish.js](https://github.com/nmrugg/stockfish.js), chargé à la demande depuis un CDN.
-- **Hébergement** : n'importe quel hébergeur de site statique (GitHub Pages, Cloudflare Pages, Netlify…).
+- **Hébergement** :Github pages
 
 ## Structure du dépôt
 
@@ -35,7 +35,7 @@ firestore.rules     Règles de sécurité de la base de données
 PRESENTATION.md      Présentation du site pour les joueurs
 ```
 
-## Installation (pour héberger ta propre instance)
+## Installation
 
 1. **Crée un projet Firebase** sur [console.firebase.google.com](https://console.firebase.google.com).
 2. **Active l'authentification** : Authentication → Sign-in method → active « E-mail/Mot de passe » et, si tu veux, « Google ».
